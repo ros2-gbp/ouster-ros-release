@@ -1,0 +1,12 @@
+Source: ros-iron-ouster-ros
+Section: misc
+Priority: optional
+Maintainer: ouster developers <oss@ouster.io>
+Build-Depends: debhelper (>= 9.0.0), curl, libcurl4-openssl-dev, libeigen3-dev, libgtest-dev <!nocheck>, libjsoncpp-dev, libpcl-dev, libspdlog-dev, libtins-dev, ros-iron-ament-cmake, ros-iron-geometry-msgs, ros-iron-ouster-msgs, ros-iron-pcl-conversions, ros-iron-pcl-ros, ros-iron-rclcpp, ros-iron-rclcpp-components, ros-iron-rclcpp-lifecycle, ros-iron-rosidl-default-generators, ros-iron-sensor-msgs, ros-iron-std-msgs, ros-iron-std-srvs, ros-iron-tf2-eigen, ros-iron-tf2-ros, ros-iron-ros-workspace, ros-iron-rosidl-typesupport-fastrtps-c, ros-iron-rosidl-typesupport-fastrtps-cpp
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-iron-ouster-ros
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, curl, libcurl4-openssl-dev, libjsoncpp1, libspdlog-dev, libtins-dev, ros-iron-geometry-msgs, ros-iron-launch, ros-iron-launch-ros, ros-iron-ouster-msgs, ros-iron-pcl-conversions, ros-iron-pcl-ros, ros-iron-rclcpp, ros-iron-rclcpp-components, ros-iron-rclcpp-lifecycle, ros-iron-rosidl-default-runtime, ros-iron-sensor-msgs, ros-iron-std-msgs, ros-iron-std-srvs, ros-iron-tf2-ros, ros-iron-ros-workspace
+Description: Ouster ROS2 driver
