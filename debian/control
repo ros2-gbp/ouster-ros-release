@@ -1,0 +1,12 @@
+Source: ros-rolling-ouster-ros
+Section: misc
+Priority: optional
+Maintainer: Ussama Naal <ussama.naal@ouster.io>
+Build-Depends: debhelper (>= 9.0.0), curl, libcurl4-openssl-dev, libeigen3-dev, libgtest-dev <!nocheck>, libjsoncpp-dev, libpcl-dev, libspdlog-dev, libtins-dev, ros-rolling-ament-cmake, ros-rolling-geometry-msgs, ros-rolling-ouster-sensor-msgs, ros-rolling-pcl-conversions, ros-rolling-pcl-ros, ros-rolling-rclcpp, ros-rolling-rclcpp-components, ros-rolling-rclcpp-lifecycle, ros-rolling-rosidl-default-generators, ros-rolling-sensor-msgs, ros-rolling-std-msgs, ros-rolling-std-srvs, ros-rolling-tf2-eigen, ros-rolling-tf2-ros, ros-rolling-ros-workspace, ros-rolling-rosidl-typesupport-fastrtps-c, ros-rolling-rosidl-typesupport-fastrtps-cpp
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-rolling-ouster-ros
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, curl, libcurl4-openssl-dev, libjsoncpp25, libspdlog-dev, libtins-dev, ros-rolling-geometry-msgs, ros-rolling-launch, ros-rolling-launch-ros, ros-rolling-ouster-sensor-msgs, ros-rolling-pcl-conversions, ros-rolling-pcl-ros, ros-rolling-rclcpp, ros-rolling-rclcpp-components, ros-rolling-rclcpp-lifecycle, ros-rolling-rosidl-default-runtime, ros-rolling-sensor-msgs, ros-rolling-std-msgs, ros-rolling-std-srvs, ros-rolling-tf2-ros, ros-rolling-ros-workspace
+Description: Ouster ROS2 driver
