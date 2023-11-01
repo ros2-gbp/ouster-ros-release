@@ -41,8 +41,8 @@ tracks:
     - git-bloom-generate -y rosrpm --prefix release/:{ros_distro} :{ros_distro} -i
       :{release_inc} --os-name rhel
     devel_branch: rolling-devel
-    last_release: rolling-0.10.4
-    last_version: 0.10.4
+    last_release: rolling-0.11.1
+    last_version: 0.11.1
     name: ouster-ros
     patches: null
     release_inc: '1'
