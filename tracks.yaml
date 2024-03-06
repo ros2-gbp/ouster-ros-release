@@ -52,5 +52,4 @@ tracks:
     ros_distro: rolling
     vcs_type: git
     vcs_uri: https://github.com/ouster-lidar/ouster-ros.git
-    version: 0.11.1
-    version_saved: :{auto}
+    version: :{auto}
