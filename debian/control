@@ -1,0 +1,12 @@
+Source: ros-rolling-ouster-ros
+Section: misc
+Priority: optional
+Maintainer: Ussama Naal <ussama.naal@ouster.io>
+Build-Depends: debhelper (>= 9.0.0), ament-cmake, curl, libcurl4-openssl-dev, libeigen3-dev, libgeometry-msgs-dev, libgtest-dev <!nocheck>, libjsoncpp-dev, libpcl-conversions-dev, libpcl-dev, libpcl-ros-dev, libsensor-msgs-dev, libspdlog-dev, libstd-msgs-dev, libstd-srvs-dev, libtf2-eigen-dev, libtf2-ros-dev, libtins-dev, pcl-ros-tools, python3-geometry-msgs, python3-pcl-ros, python3-sensor-msgs, python3-std-msgs, python3-std-srvs, python3-tf2-ros, ros-geometry-msgs, ros-rolling-ouster-sensor-msgs, ros-rolling-rclcpp, ros-rolling-rclcpp-components, ros-rolling-rclcpp-lifecycle, ros-rolling-rosidl-default-generators, ros-sensor-msgs, ros-std-msgs, ros-std-srvs, ros-rolling-ros-workspace, ros-rolling-rosidl-typesupport-fastrtps-c, ros-rolling-rosidl-typesupport-fastrtps-cpp
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-rolling-ouster-ros
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, curl, libcurl4-openssl-dev, libgeometry-msgs-dev, libjsoncpp1, libpcl-conversions-dev, libpcl-ros-dev, libsensor-msgs-dev, libspdlog-dev, libstd-msgs-dev, libstd-srvs-dev, libtf2-ros-dev, libtins-dev, pcl-ros-tools, python3-geometry-msgs, python3-pcl-ros, python3-sensor-msgs, python3-std-msgs, python3-std-srvs, python3-tf2-ros, ros-geometry-msgs, ros-rolling-launch, ros-rolling-launch-ros, ros-rolling-ouster-sensor-msgs, ros-rolling-rclcpp, ros-rolling-rclcpp-components, ros-rolling-rclcpp-lifecycle, ros-rolling-rosidl-default-runtime, ros-sensor-msgs, ros-std-msgs, ros-std-srvs, ros-rolling-ros-workspace
+Description: Ouster ROS2 driver
