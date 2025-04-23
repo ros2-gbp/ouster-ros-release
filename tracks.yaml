@@ -73,7 +73,7 @@ tracks:
     last_version: 0.11.1
     name: ouster-ros
     patches: null
-    release_inc: '5'
+    release_inc: '6'
     release_repo_url: null
     release_tag: rolling-:{version}
     ros_distro: kilted
