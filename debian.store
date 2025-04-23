@@ -1,1 +1,1 @@
-{"base": "5bfaf60", "parent": "debian/rolling/ouster_ros", "previous": "a06da48", "trim": "", "trimbase": ""}
+{"base": "c7ee017e3a95", "parent": "debian/kilted/ouster_ros", "previous": "5de2535db996", "trim": "", "trimbase": ""}
