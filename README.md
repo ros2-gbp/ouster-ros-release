@@ -1,3 +1,28 @@
+## ouster-ros (humble) - 0.13.14-1
+
+The packages in the `ouster-ros` repository were released into the `humble` distro by running `/usr/bin/bloom-release --new-track --rosdistro humble --track humble ouster-ros` on `Tue, 23 Sep 2025 02:19:52 -0000`
+
+These packages were released:
+- `ouster_ros`
+- `ouster_sensor_msgs`
+
+Version of package(s) in repository `ouster-ros`:
+
+- upstream repository: https://github.com/ouster-lidar/ouster-ros.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `0.13.14-1`
+
+Versions of tools used:
+
+- bloom version: `0.13.0`
+- catkin_pkg version: `1.1.0`
+- rosdep version: `0.26.0`
+- rosdistro version: `1.0.1`
+- vcstools version: `0.1.42`
+
+
 ## ouster-ros (rolling) - 0.11.1-4
 
 The packages in the `ouster-ros` repository were released into the `rolling` distro by running `/usr/bin/bloom-release --edit-track --rosdistro rolling --track rolling ouster-ros` on `Mon, 27 Nov 2023 19:04:32 -0000`
