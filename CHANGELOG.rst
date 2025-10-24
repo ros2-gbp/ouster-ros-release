@@ -2,9 +2,8 @@
 Changelog for package ouster_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.13.14 (2025-09-22)
+0.13.15 (2025-10-24)
 --------------------
-* Add ouster-sdk directly
 * Drop whole archive linkage (#489)
 * fix-rolling build (#483)
 * Correct pointcloud.is_dense flag (#473)
