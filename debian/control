@@ -1,0 +1,12 @@
+Source: ros-humble-ouster-ros
+Section: misc
+Priority: optional
+Maintainer: ouster developers <oss@ouster.io>
+Build-Depends: debhelper (>= 9.0.0), curl, libcurl4-openssl-dev, libeigen3-dev, libgtest-dev <!nocheck>, libjsoncpp-dev, libpcl-dev, libspdlog-dev, libtins-dev, ros-humble-ament-cmake, ros-humble-cv-bridge, ros-humble-geometry-msgs, ros-humble-ouster-sensor-msgs, ros-humble-pcl-conversions, ros-humble-pcl-ros, ros-humble-rclcpp, ros-humble-rclcpp-components, ros-humble-rclcpp-lifecycle, ros-humble-rosidl-default-generators, ros-humble-sensor-msgs, ros-humble-std-msgs, ros-humble-std-srvs, ros-humble-tf2-eigen, ros-humble-tf2-ros, ros-humble-ros-workspace, ros-humble-rosidl-typesupport-fastrtps-c, ros-humble-rosidl-typesupport-fastrtps-cpp
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-humble-ouster-ros
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, curl, libcurl4-openssl-dev, libjsoncpp25, libspdlog-dev, libtins-dev, ros-humble-cv-bridge, ros-humble-geometry-msgs, ros-humble-launch, ros-humble-launch-ros, ros-humble-ouster-sensor-msgs, ros-humble-pcl-conversions, ros-humble-pcl-ros, ros-humble-rclcpp, ros-humble-rclcpp-components, ros-humble-rclcpp-lifecycle, ros-humble-rosidl-default-runtime, ros-humble-sensor-msgs, ros-humble-std-msgs, ros-humble-std-srvs, ros-humble-tf2-ros, ros-humble-ros-workspace
+Description: Ouster ROS2 driver
