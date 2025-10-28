@@ -1,174 +1,296 @@
-=========
-Changelog
-=========
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package ouster_ros
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-[unreleased]
-============
-* [BUGFIX]: correctly align timestamps to the generated point cloud.
-* [BUGFIX]: NEAR_IR data is not populated with data for organized point clouds that have no range.
-* Add support to enable **loop** for pcap replay + other replay config.
-* Add a new launch file parameter ``pub_static_tf`` that allows users to turn off the braodcast
-  of sensor TF transforms.
-* Introduce a new topic ``/ouster/telemetry`` that publishes ``ouster_ros::Telemetry`` messages,
-  the topic can be turned on/off by including the token ``TLM`` in the flag ``proc_mask`` launch arg.
-* Add a new launch file parameter ``min_scan_valid_columns_ratio`` to allow users to set the minimum
-  ratio of valid columns in a scan for it to be processed. Default value is ``0.0``.
-* Update where ouster-ros and ouster_client include directories get installed so that those headers
-  can be included externally.
-* Add ``storage`` launch parameter to ``record.launch.xml``
-* Add a padding-free point type of ``PointXYZI`` under ``ouster_ros`` namespace contrary to the pcl
-  version ``pcl::PointXYZI`` for bandwith sensitive applications.
-* [BUGFIX]: Use the node clock to ensure messages report sim time in replay mode.
-* Introduce a new param ``v_reduction`` that allows reducing the number of beams count of the published
-  point cloud
-* Allow users to use ``Zenoh`` with the supplied Dockerfile and add it to the CI pipeline.
-* Introduce a new capability to suppress certain range measurements of the point cloud by providing
-  a mask image to the driver through the ``mask_path`` launch file argument.
-* [BUGFIX]: Correct the computation of ``pointcloud.is_dense`` flag.
-* [BUGFIX]: Drop whole archive linkage which is causing double free corruption.
-
-
-ouster_ros v0.13.2
-==================
-* [BUGFIX]: Make sure to initialize the sensor with launch file parameters.
-* [BUGFIX]: ``os_driver`` failed when RAW option is used.
-
-
-ouster_ros v0.13.0
-==================
-* [BUGFIX]: LaserScan is not properly aligned with generated point cloud
-  * address an issue where LaserScan appeared different on FW prior to 2.4
-* [BUGFIX]: LaserScan does not work when using dual mode
-* [BUGFIX]: ROS2 crashes when standby mode is set and then set to normal
-* [BUGFIX]: Implement lock free ring buffer with throttling to reduce partial frames
-* add support for FUSA udp profile ``FUSA_RNG15_RFL8_NIR8_DUAL``.
-* [BREAKING]: Set xyz values of individual points in the PointCloud to NaNs when range is zero.
-* Added support to replay pcap format direclty from ouster-ros. The feature needs to be enabled
-  explicitly by turning on the ``BUILD_PCAP`` cmake option and having ``libpcap-dev`` installed.
-* [BREAKING] Added new launch files args ``azimuth_window_start`` and ``azimuth_window_end`` to
-  allow users to set LIDAR FOV on startup. The new options will reset the current azimuth window
-  to the default [0, 360] azimuth if not configured.
-* Added a new launch ``persist_config`` option to request the sensor persist the current config
-* Added a new ``loop`` option to the ``replay.launch.xml`` file.
-* Added support for automatic sensor reconnection. Consult ``attempt_reconnect`` launch file arg
-  documentation and the associated params to enable. Known Issues:
-  - Doesn't handle detect and handle invalid configurations
-* Added an automatic start mode to make it easier to start the node without using time actions.
-  - To disable set ``auto_start`` to ``false`` during launch
-* Added a new parameter ``organized`` to request publishing unorganized point cloud
-* Added a new parameter ``destagger`` to request publishing staggered point cloud
-* Added two parameters ``min_range``, ``max_range`` to limit the lidar effective range
-* Updated ouster_client to the release of ``20240425`` [v0.11.1]; changes listed below.
-
-ouster_client
--------------
-* Added a new buffered UDP source implementation BufferedUDPSource.
-* The method version_of_string is marked as deprecated, use version_from_string
-instead.
-* Added a new method firmware_version_from_metadata which works across firmwares.
-* Added support for return order configuration parameter.
-* Added support for gyro and accelerometer FSR configuration parameters.
-* [BUGFIX] mtp_init_client throws a bad optional access.
-* [BUGFIX] properly handle 32-bit frame IDs from the
-* FUSA_RNG15_RFL8_NIR8_DUAL sensor UDP profile.
-
-
-ouster_ros v0.12.0
-==================
-* [BREAKING]: updated ouster_client to the release of ``20231031`` [v0.10.0]; changes listed below.
-* [BREAKING]: publish PCL point clouds destaggered.
-* introduced a new launch file parameter ``ptp_utc_tai_offset`` which represent offset in seconds
-  to be applied to all ROS messages the driver generates when ``TIME_FROM_PTP_1588`` timestamp mode
-  is used.
-  * [BREAKING]: the default value of ``ptp_utc_tai_offset`` is set to ``-37.0``. To retain the same
-    time offset for an existing system, users need to set ``ptp_utc_tai_offset`` to ``0.0``.
-* fix: destagger columns timestamp when generating destaggered point clouds.
-* shutdown the driver when unable to connect to the sensor on startup
-* breaking: rename ouster_msgs to ouster_sensor_msgs
-* added the ability to customize the published point clouds(s) to velodyne point cloud format and
-  other common pcl point types.
-* ouster_image_compoenent can operate separately from ouster_cloud_component.
-* fix: gracefully stop the driver when shutdown is requested.
-
-ouster_client
--------------
-* [BREAKING] Updates to ``sensor_info`` include:
-    * new fields added: ``build_date``, ``image_rev``, ``prod_pn``, ``status``, ``cal`` (representing
-      the value stored in the ``calibration_status`` metadata JSON key), ``config`` (representing the
-      value of the ``sensor_config`` metadata JSON key)
-    * the original JSON string is accessible via the ``original_string()`` method
-    * The ``updated_metadata_string()`` now returns a JSON string reflecting any modifications to
-      ``sensor_info``
-    * ``to_string`` is now marked as deprecated
-* [BREAKING] The RANGE field defined in `parsing.cpp`, for the low data rate profile, is now 32 bits
-  wide (originally 16 bits).
-    * Please note this fixes a SDK bug. The underlying UDP format is unchanged.
-* [BREAKING] The NEAR_IR field defined in `parsing.cpp`, for the low data rate profile, is now 16
-  bits wide (originally 8 bits).
-    * Plase note this fixes a SDK bug. The underlying UDP format is unchanged.
-* [BREAKING] changed frame_id return size to 32 bits from 16 bits
-* An array of per-packet timestamps (called ``packet_timestamp``) is added to ``LidarScan``
-* The client now retries failed requests to an Ouster sensor's HTTP API
-* Increased the default timeout for HTTP requests to 40s
-* Added FuSA UDP profile to support Ouster FW 3.1+
-* Improved ``ScanBatcher`` performance by roughly 3x (depending on hardware)
-* Receive buffer size increased from 256KB to 1MB
-* [bugfix] Fixed an issue that caused incorrect Cartesian point computation in the ``viz.Cloud``
-  Python class
-* [bugfix] Fixed an issue that resulted in some ``packet_format`` methods returning an uninitialized
-  value
-* [bugfix] Fixed a libpcap-related linking issue
-* [bugfix] Fixed an eigen 3.3-related linking issue
-* [bugfix] Fixed a zero beam angle calculation issue
-* [bugfix] Fixed dropped columns issue with 4096x5 and 2048x10
-
-ouster_ros v0.10.0
-==================
-
-ouster_ros(2)
--------------
-* MVP ouster-ros targeting ros2 distros (beta release)
-* introduced a ``reset`` service to the ``os_sensor`` node
-* breaking change: updated to ouster sdk release 20230403
-* EOL notice: ouster-ros driver will drop support for ``ROS foxy`` by May 2023.
-* bugfix: Address an issue causing the driver to warn about missing non-legacy fields even they exist
-  in the original metadata file.
-* added a new launch file ``sensor_mtp.launch.xml`` for multicast use case (experimental).
-* added a technique to estimate the the value of the lidar scan timestamp when it is missing packets
-  at the beginning
-* add frame_id to image topics
-* fixed a potential issue of time values within generated point clouds that could result in a value
-  overflow
-* added a new ``/ouster/metadata`` topic that is consumed by os_cloud and os_image nodes and save it
-  to the bag file on record
-* make specifying metadata file optional during record and replay modes as of package version 8.1
-* replace ``tf_prefix`` from ``os_cloud`` with ``sensor_frame``, ``lidar_frame`` and ``imu_frame``
-  launch parameters.
-* bugfix: fixed an issue that prevents running multiple instances of the sensor and cloud components
-  in the same process.
-* switch to using static transform publisher for the ros2 driver.
-* implemented a new node named ``os_driver`` which combines the functionality of ``os_sensor``,
-  ``os_cloud`` and ``os_image`` into a single node.
-* added support to parse the same parameters provided by the ``ros2_ouster_driver``, the parameters
-  are ``lidar_ip``, ``computer_ip``, ``proc_mask`` and ``use_system_default_qos``; the parameters
-  are fully functional and similar to what the ``ros2_ouster_driver`` provides.
-* for convenience introduced a new launch file ``driver_launch.py`` that is compatible with the 
-  ``ros2_ouster_driver`` in terms of parameters it accepts and the name of published topics.
-* introduced a new parameter ``point_cloud_frame`` to allow users to select which frame to use when
-  publishing the point cloud (choose between ``sensor`` and ``lidar``).
-* breaking: ``lidar`` frame is the default frame used when publishing point clouds.
-* added the ability to choose between ``SensorDataQoS`` or ``SystemDefaultQoS`` across all published
-  topics with ``SensorDataQoS`` selected by default for live sensor mode and ``SystemDefaultQoS``
-  enabled for record and replay modes.
-* introduced a new topic ``/ouster/scan`` which publishes ``sensor_msgs::msg::LaserScan`` messages
-* fix: on dual returns the 2nd point cloud replaces the 1st one.
-* breaking: merge ``ouster-srvs`` package into ``ouster-msgs``.
-
-ouster_client
--------------
-* added a new method ``mtp_init_client`` to init the client with multicast support (experimental).
-* the class ``SensorHttp``  which provides easy access to REST APIs of the sensor has been made public
-  under the ``ouster::sensor::util`` namespace.
-* breaking change: get_metadata defaults to outputting non-legacy metadata
-* add debug five_word profile which will be removed later
-* breaking change: remove deprecations on LidarScan
+0.13.15 (2025-10-24)
+--------------------
+* Drop whole archive linkage (#489)
+* fix-rolling build (#483)
+* Correct pointcloud.is_dense flag (#473)
+* Port the pointcloud mask feature to ROS2 (#462)
+  * Port the pointcloud mask feature to ROS2
+  * Base Image fixed
+  * Update README and exclude iron from the build
+* [ROS2] Expose the vertical beam reduction param (#444)
+  * Expose the vertical beam reduction value + rename arg + Better handling of deprecated topic names
+* ROS-317: Fix simulation in replay mode (#440)
+  * Use node clock to properly populate the timestamp in replay modes
+  * Update changelog and package number
+* Implement a padding-free version of pcl::PointXYZI (#439)
+* Add a new storage param to record.launch.xml (#437)
+  * Add storage param to record
+* [ros2] Fix install directories (#433)
+  * Cmakelists: Fix install directories
+  * Bump package.xml patch version
+  * Update changelog
+  ---------
+  Co-authored-by: Michael Wiznitzer <mwiznitzer@neyarobotics.com>
+* Port the changes to ROS2 (#430)
+  * Port the changes to ROS2
+  * Update sensor.*.launch
+* SW-6906: publish sensor telemetry in ouster ros (#422)
+  * Port changes from ROS1 to ROS2
+  * Mention TLM as an option in yaml configs
+* Enable auto start on replay node (#421)
+* ROS-389 [rolling/humble/iron/jazzy]: replay-improvments-and-fixes (#393)
+  Remap metadata topic + Support loop capability in pcap replay + Add play_delay & play_rate for replay
+  Added a launch file parameter pub_static_tf to disable sensor transforms broadcast
+  ---------
+  Co-authored-by: Guillaume Doisy <guillaume@dexory.com>
+* ROS-350[HUMBLE/IRON/JAZZY]: 't' timestamp field content is not plausible (#387)
+  Align timestamps based on staggered/destaggered option
+* HOTFIX/ROS-382: os_driver fails when raw option is enabled (#384)
+  * Fix os_driver fails when RAW option is enabled
+  * Replace lifecycle_publisher with regular publisher for the os_pcap
+* HOTFIX/ROS-376-initialize-the-sensor-with-launch-config-params (#380)
+  * Invoke parse_config_from_ros_parameters on node init
+  * Fix a typo + Add a note regarding the recommendation
+* [HUMBLE|IRON|JAZZY] Port ROS-363 to ROS2 (#369)
+  * Port ROS-363 to ROS2
+  * Turn off OSF
+  * Update package version and CHANGELOG.rst + up  the default max range  to 10000.0 meters
+* ROS-368[HUMBLE|IRON|JAZZY]: Unable to use the replay mode due to unknown substitution arg (#370)
+  * Fix replay unknown substitution arg
+  * Fix the definition of _loop variable
+  * Move remap verb to the node
+* ROS-119: ouster-ros driver automatic reconnection [HUMBLE/IRON/JAZZY] (#362)
+  * Port sensor reconnection logic to ROS 2
+  * Add Jazzy to the build!
+  * Update README and checkout
+  * Add a note about not being able to properly handle invalid configuration
+  * Implement automatic start for sensor/record modes
+* ROS-227: Set LIDAR FOV on startup and add an option to persist the config [HUMBLE/IRON] (#357)
+  * Port azimuth window and persist config changes to ROS2
+* ROS2[HUMBLE/IRON] add pcap reader (#355)
+  * Port the pcap replay to ros2-foxy
+  * Add time update
+* Support FUSA dual returns udp profile [HUMBLE/IRON] (#335)
+  * Add support for FUSA profile + set xyz to NaNs on zero range
+* Implement lock free ring buffer with throttling [HUMBLE/IRON] (#321)
+  * Implement lock free ring buffer with throttling
+  - (cherry picked from commit ade5822aba552f3839cf077daea44dc26869026b)
+  * Update CHANGELOG and package version
+* docs: fix spelling mistakes (#296)
+* Use timeout when waiting for packets to be proceed in case they don't come (#293)
+* ROS-196: laser scan from ros driver is not properly aligned with point cloud [humble] (#203)
+  * Apply destagger to laser scan + Add laser to RVIZ
+  * Align LaserScan with the PointCloud
+  * Apply proper pixel shift
+  * Resolve the issue of zeroed laserscan on dual mode
+  * Address an issue where LaserScan appeared different on FW prior to 2.4
+  * Fix the issue for odd numbers
+  * List selected sensors on the main page + Update RVIZ config to highlight the 2D LaserScan.
+* SW-5623: Bump up ouster_client to 20231031 release (#262)
+  * Bump ouster-client to 2023103 release
+  * fix: gracefully stop the driver when shutdown is requested.
+* SW-5466: Support Velodyne point type in the ROS driver amendments (#254)
+  * Add support to control point_type through launch.xml files +
+  * Add a note to CHANGELOG about the breaking change for ptp/utc time offset
+* SW-5466: Support Velodyne and other point types in ouster-ros driver (#216)
+  * Quick protoype of Velodyne point type
+  * Add PointXYZIR point type + other major pcl point types
+  * Include point meta functions and point transform by the ouster_ros namesapce
+  * Wrap point meta functions with a namespace and use shorter names for the functions +
+  * Add a seed test module for the point_cloud_compose methods +
+  Add description for the point_cloud_compose methods + refactor code and add compile time checks.
+  * Propagate error state, warn about potential incompatible profile, propagate error state
+  * Add minimal documentation about the new `point_type` parameter.
+* SW-5607: rename package ouster_msgs to avoid package name conflict in ros index (#244)
+  * rename package ouster_msgs to avoid conflict name conflict in ros index
+  * set ouster_sensor_msgs version number to match with ouster_ros package
+* Shutdown when can not connect to sensor on startup in ROS2 (Humble/Iron) (#211)
+  * Shutdown when can not connect to sensor on startup
+  * Apply same behavior to independent launch file
+  * Update changelog and package version
+* SW-5459: add a parameter for utc/tai time offset (#195)
+  * Implemented UTC/TAI offset for the PTP timestamp mode
+  * Make sure all the timestamp values of LidarScan are utc corrected
+  * Modify timestamp values before producing a PointCloud
+  * Remove no longer needed comment from the Dockerfile
+  * Destagger timestamp when generating destagger point clouds
+* SW-5396: publish point cloud in destaggered form (#182)
+  * Quick implementtion of cloud destaggering
+  * Perform destaggering of point clouds during the copy + add a viz-reliable file + wrap all classes in ouster_ros
+  * Update changelog and version
+  * Reformat changelog
+* SW-5345: merge-ouster-srvs into ouster-msgs (#176)
+  * Merge ouster-srvs into ouster-msgs package + Update dockerfile + Other fixes and code improvements
+  * Update launch file name within the dockerfile
+  * Update CHANGELOG.txt
+  * Update ouster_ros package version to highlight the breadking change due obseleting ouster_srvs
+  * Use angle brackets for external headers
+  * Remove unused library include
+  * Remove unused launch params in sensor_mtp.launch
+  * Fix the table of contents
+* SW-5167: follow ups from SW-5167-fix-black-columns-when-recording-under-ros-foxy (#163)
+  * Initialize point_cloud_frame with an empty string + and expose point_cloud_frame through launch xml files +
+  Remove unused/duplicate param definitions + Update descriptions
+  * Correct the name of the node to be activated for merged node
+* ROS compatibility mode dual returns fix (#156)
+  * Separately initialize vector elements
+  * Update changelog and package version
+  * Properly check for the write_text_to_file success
+* ROS2 compatibility mode (#146)
+  * Factoring out Imu and Lidar packets handling
+  * Added os_driver which combines os_sensor and os_cloud +
+  Added required launch files +
+  Better abstraction of classes +
+  Simplified threading logic +
+  Added thread safe implemention of ring buffer (not hooked yet)
+  * Move down pragma once in the handlers
+  * Adding unit tests for the ThreadSafeRingBuffer
+  * Add one more case to the unit test of ThreadSafeRingBuffer
+  * Quick hook up of the ThreadSafeRingBuffer for os_sensor and os_driver
+  * Add an option to select the point_cloud frame
+  * Keep transforms in Lidar Frame by default with option to switch
+  * Formatting os_sensor and os_driver
+  * Provide support for parsing the community driver params file with approprite launch file
+  * Factor out tf transforms broadcast
+  * Formatting imu and lidar packet handlers
+  * Fix build issue
+  * Incorporate LaserScan message composition
+  * Refactor a bit and add the ability to process and publish point clouds and laser scans
+  * Restor os_cloud_node ability to process point clouds
+  * Parse proc_mask and hook to launch files and config
+  * Add support for the selecting IMU + create topics/subs when their respective flags enabled
+  * Reduce sync operations + restore sensor reset/reactivation
+  * Add the ability to override current qos settings
+  * Add minor note
+  * More detailed explanation about the IMG node
+  * Rename the file os_sensor_cloud_image_params to os_sensor_cloud_image_params.yaml and update corresponding launch files
+  * Expose use_system_default_qos parameter to xml launch file and use proper defaults
+  * Update minimal readme file and utilize os_driver by default +
+  add proc_mask to xml file +
+  Remove experminal marker from set_config and reset ros services
+  * Update CHANGELOG.rst and package version
+  * Apply && to accepted method of ThreadSafeRingBuffer +
+  nits and code formatting
+  * Add missing parameter declaration
+  * Re-formatting CHANGELOG a bit
+  * Added ImageProcessor to support IMG flag +
+  Define new argument scan_ring
+  * Expose scan_ring param and update relevant params description
+  * Added notes to size(), empty(), full()
+  * remove deprecated methods + naming nits
+  * Update ChangeLog + Fix load_metadata_from_file
+  * Try out building against Iron + revise sensor_mtp.launch
+  * Correct the params file name + document params
+  * Carry over fixes from foxy branch
+  * Update README.md to mention compatibilty mode
+* SW-4997: Switch from using ROS timers to thread for polling lidar data (#140)
+  * Switch from using ROS timers to thread for polling
+  * Specify param defaults for non-required params
+* SW-4972: merge switching to static transform publisher contribution (#124)
+  * use static tf broadcaster for ros2 (#112)
+  * use separate params for tf frames
+  * send static transforms once
+  * Disable static transform publishers and update changelog and package version
+  * Disable rviz static transform publisher
+  * Remove rviz static transform publisher hack
+  * Remove left out variables
+  ---------
+  Co-authored-by: Adam Aposhian <adam.l.aposhian@gmail.com>
+* SW-4859: enable having multiple components of same-type under same process (#108)
+  * Remove the use of static vars within components
+  * Resolve conflicts and update changelog and version
+  * Fix a typo 'instance'
+* Drop service_msgs dep (#117)
+* SW-4924: Replace tf_prefix by sensor_frame lidar_frame and imu_frame parameters (#115)
+  * deprecate tf_prefix from os_cloud (#96)
+  Co-authored-by: Guillaume Doisy <guillaume@dexory.com>
+  * Squashed commit of the following:
+  commit 6280bfa1178bdee4fe695cb4752efd5ff15279db
+  Author: Ussama Naal <ussama.naal@ouster.io>
+  Date:   Fri Apr 28 07:54:34 2023 -0700
+  Merge branch 'deprecate_tf_prefix'
+  commit 35f2fd2ba50eaf3e4b65909269eb9609bff7a010
+  Author: Guillaume Doisy <guillaume@dexory.com>
+  Date:   Mon Apr 3 18:12:44 2023 +0100
+  deprecate tf_prefix from os_cloud
+  * Update ChangeLog and package version
+  * Propagate the parameters to launch files
+  * Add a TODO note
+  ---------
+  Co-authored-by: Guillaume Doisy <guillaume@dexory.com>
+* SW-4837: replace the use of ros service to retrieve sensor metadata with latched topics (#102)
+  * Working port of latched metadata topic on ros2
+  * Update replay and record launch files to providing metadata file an optional parameter
+  * Remove extra white space in replay record command
+  * Undo changes to the metadata-qos-override
+  * minor code syntax improvements
+  * Add missing metadata topic when bag file isn't specified
+  * Use concise syntax and formatting
+  * Reverse logic for easier read
+  * Apply node transition if it exists
+* Explicity set cxx compile standard if the env isn't (#99)
+* SW-4747: update the ros 2 driver(s) to the 20230403 sdk release (#94)
+  * Update to the latest ouster sdk
+  * Forward multicast funcitonality + Other improvements and fixes
+  * Add service_msgs dependency to package.xml
+  * Correct sensor_mtp.launch for ros2 launch file format
+  * Move to most recent SDK update
+  * Declare and fill defaults for mtp paramters + fix uninitialzed compute_to_scan
+  * Launch file rename and README corrections
+* Remove the duplicate sensor_info object
+* Merge pull request #51 from ouster-lidar/SW-4342-prototype-ros-2-driver
+  ROS2 driver MVP (beta release)
+* more sensor configuration change handling
+* Correct the logic around the detection of init_id change
+* Wire set_config service call into node lifecycle
+* Address typos and as to install rviz2 instead
+* Address potential vulnerability when saving metadata to file
+* Restructure reset operation on init_id change
+* Use initialization list when constructing std::atomic
+* When non legacy lidar profile is in use sniff lidar packes and perform self reset on init_id change event
+* Add a reset service to sensor node and cycle the node upon invocation
+* Uodate readme title and cleanup parameters yaml
+* Add specific ros2 installation and usage instructions +
+  other refactor and corrections
+* code formatting
+* Fix a bug caused by the type of point_cloud msg
+* correct lidar_scan rename
+* Code refactor and formatting
+* Implement node lifecycle management for sensor node +
+  refactoring launch files +
+  rivz launch arg for overriding default config
+* move ouster-sdk to a subfolder of ouster-ros
+* More build fixes
+* Add libtins as a dependency and flush out changelog
+* Completely stripout topic_tools
+* fix docker build and target supported distros
+* launch file cleanup
+* Remove the extra '
+* Add a note about missing support of parameterize ros namespace when using launch.py
+* Restore scoping ouster_ros nodes and topics to a configurable namesapce when using xml launch format
+* Address the issue of missing sensor frame and/or old tf data when launching rviz2 from same launch file +
+  correct sensor name in rviz
+* Add some level of robustness around invoking the get_metadata service from processing nodes
+* Re-enable replay functionality +
+  address an issue where the os_replay node lose fields when load the metadata from file.
+* Restore recording functionality
+* Formulate the launch files in xml format +
+  Rename separate to independent
+* Drop setting cxx stanard in ouster_ros + refactor
+* Enable running rviz from same launch file conditionally
+* Base point cloud color scheme on range values
+* Factor out parameters into a shared parameters.yaml file
+* Utilize SensorDataQoS and add RVIZ launch file +
+  code refactor
+* Make connecting to get_metadata service robust +
+  Drop TimerAction from the launch file
+  Add ProcessingNode abstract class for os_cloud and os_image +
+  Rename files to reflect the new changes
+  Drop deprecated scan_to_cloud method +
+  Code refactor and formatting
+* Code refactor and formatting, correct msg index of 2nd cloud
+* Auto generate standalone nodes from components
+* Move service definition into a separate ros2 package
+* Correct replay component name, replace bind with lambda
+* Rename namesapce and enable replay mode
+* Fix component discovery
+* More refactoring and code readabilty
+* Tidy up the cmake file
+* Drop std_msgs
+* Drop std_msgs
+* ROS2 driver prototype
+* Contributors: Andre Nguyen, Michael Wiznitzer, Ussama Naal, ralwing
