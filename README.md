@@ -1,3 +1,28 @@
+## ouster-ros (jazzy) - 0.13.15-1
+
+The packages in the `ouster-ros` repository were released into the `jazzy` distro by running `/usr/bin/bloom-release --new-track --rosdistro jazzy --track jazzy ouster-ros` on `Tue, 28 Oct 2025 17:30:44 -0000`
+
+These packages were released:
+- `ouster_ros`
+- `ouster_sensor_msgs`
+
+Version of package(s) in repository `ouster-ros`:
+
+- upstream repository: https://github.com/ouster-lidar/ouster-ros.git
+- release repository: https://github.com/ros2-gbp/ouster-ros-release.git
+- rosdistro version: `0.11.1-6`
+- old version: `0.11.1-6`
+- new version: `0.13.15-1`
+
+Versions of tools used:
+
+- bloom version: `0.13.0`
+- catkin_pkg version: `1.1.0`
+- rosdep version: `0.26.0`
+- rosdistro version: `1.0.1`
+- vcstools version: `0.1.42`
+
+
 ## ouster-ros (humble) - 0.13.15-1
 
 The packages in the `ouster-ros` repository were released into the `humble` distro by running `/usr/bin/bloom-release --track humble --rosdistro humble --track humble ouster-ros` on `Fri, 24 Oct 2025 16:21:49 -0000`
