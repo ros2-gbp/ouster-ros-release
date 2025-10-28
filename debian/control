@@ -1,0 +1,12 @@
+Source: ros-kilted-ouster-ros
+Section: misc
+Priority: optional
+Maintainer: ouster developers <oss@ouster.io>
+Build-Depends: debhelper (>= 9.0.0), curl, libcurl4-openssl-dev, libeigen3-dev, libgtest-dev <!nocheck>, libjsoncpp-dev, libpcl-dev, libspdlog-dev, libtins-dev, ros-kilted-ament-cmake, ros-kilted-cv-bridge, ros-kilted-geometry-msgs, ros-kilted-ouster-sensor-msgs, ros-kilted-pcl-conversions, ros-kilted-pcl-ros, ros-kilted-rclcpp, ros-kilted-rclcpp-components, ros-kilted-rclcpp-lifecycle, ros-kilted-rosidl-default-generators, ros-kilted-sensor-msgs, ros-kilted-std-msgs, ros-kilted-std-srvs, ros-kilted-tf2-eigen, ros-kilted-tf2-ros, ros-kilted-ros-workspace, ros-kilted-rosidl-typesupport-fastrtps-c, ros-kilted-rosidl-typesupport-fastrtps-cpp
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-kilted-ouster-ros
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, curl, libcurl4-openssl-dev, libjsoncpp1, libspdlog-dev, libtins-dev, ros-kilted-cv-bridge, ros-kilted-geometry-msgs, ros-kilted-launch, ros-kilted-launch-ros, ros-kilted-ouster-sensor-msgs, ros-kilted-pcl-conversions, ros-kilted-pcl-ros, ros-kilted-rclcpp, ros-kilted-rclcpp-components, ros-kilted-rclcpp-lifecycle, ros-kilted-rosidl-default-runtime, ros-kilted-sensor-msgs, ros-kilted-std-msgs, ros-kilted-std-srvs, ros-kilted-tf2-ros, ros-kilted-ros-workspace
+Description: Ouster ROS2 driver
