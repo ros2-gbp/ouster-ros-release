@@ -20,6 +20,16 @@ class OusterReplay : public OusterSensorNodeBase {
     explicit OusterReplay(const rclcpp::NodeOptions& options)
         : OusterSensorNodeBase("os_replay", options) {
         declare_parameters();
+        bool auto_start = get_parameter("auto_start").as_bool();
+
+        if (auto_start) {
+            RCLCPP_WARN(get_logger(), "auto start requested");
+            auto request_transitions = std::vector<uint8_t>{
+                lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE,
+                lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE};
+            execute_transitions_sequence(request_transitions, 0);
+            RCLCPP_WARN(get_logger(), "auto start initiated");
+        }
     }
 
     LifecycleNodeInterface::CallbackReturn on_configure(
@@ -28,7 +38,7 @@ class OusterReplay : public OusterSensorNodeBase {
 
         try {
             auto meta_file = parse_parameters();
-            create_metadata_publisher();
+            create_metadata_pub();
             load_metadata_from_file(meta_file);
             publish_metadata();
             create_get_metadata_service();
@@ -96,14 +106,17 @@ class OusterReplay : public OusterSensorNodeBase {
     }
 
    private:
-    void declare_parameters() { declare_parameter<std::string>("metadata"); }
+    void declare_parameters() {
+        declare_parameter("auto_start", true);
+        declare_parameter<std::string>("metadata");
+    }
 
     std::string parse_parameters() {
         auto meta_file = get_parameter("metadata").as_string();
         if (!is_arg_set(meta_file)) {
-            RCLCPP_ERROR(get_logger(),
+            RCLCPP_FATAL(get_logger(),
                          "Must specify metadata file in replay mode");
-            throw std::runtime_error("metadata no specificed");
+            throw std::runtime_error("metadata not specificed");
         }
         return meta_file;
     }
