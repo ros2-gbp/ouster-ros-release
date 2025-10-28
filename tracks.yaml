@@ -69,11 +69,11 @@ tracks:
     - git-bloom-generate -y rosrpm --prefix release/:{ros_distro} :{ros_distro} -i
       :{release_inc} --os-name rhel
     devel_branch: jazzy-devel
-    last_release: rolling-0.11.1
-    last_version: 0.11.1
+    last_release: jazzy-0.13.15
+    last_version: 0.13.15
     name: ouster-ros
     patches: null
-    release_inc: '6'
+    release_inc: '1'
     release_repo_url: null
     release_tag: jazzy-:{version}
     ros_distro: jazzy
