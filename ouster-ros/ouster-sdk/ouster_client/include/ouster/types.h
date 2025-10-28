@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "nonstd/optional.hpp"
+#include "version.h"
 
 namespace ouster {
 
@@ -162,8 +163,10 @@ enum NMEABaudRate {
 
 /** Profile indicating packet format of lidar data. */
 enum UDPProfileLidar {
+    PROFILE_LIDAR_UNKNOWN = 0,
+
     /** Legacy lidar data */
-    PROFILE_LIDAR_LEGACY = 1,
+    PROFILE_LIDAR_LEGACY,
 
     /** Dual Returns data */
     PROFILE_RNG19_RFL8_SIG16_NIR16_DUAL,
@@ -176,11 +179,43 @@ enum UDPProfileLidar {
 
     /** Five Word Profile */
     PROFILE_FIVE_WORD_PIXEL,
+
+    /** FuSa two-word pixel */
+    PROFILE_FUSA_RNG15_RFL8_NIR8_DUAL,
 };
 
 /** Profile indicating packet format of IMU data. */
 enum UDPProfileIMU {
-    PROFILE_IMU_LEGACY = 1  ///< Legacy IMU data
+    PROFILE_IMU_LEGACY = 1,  ///< Legacy IMU data
+};
+
+/** Full scale range for IMU data. */
+enum FullScaleRange {
+    /** Higher precision lower range measurement mode */
+    FSR_NORMAL = 0,
+
+    /** Lower precision higher range measurement mode */
+    FSR_EXTENDED
+};
+
+/** Priority of returns for the lidar to output.
+ *   Lidar can have more than 1 or 2 detected "returns".
+ *   This indicates to the lidar which ones it should output.
+ *   See sensor docs for more details.
+ */
+enum ReturnOrder {
+    /** Lidar returns the strongest returns first */
+    ORDER_STRONGEST_TO_WEAKEST = 0,
+
+    /** Lidar returns the furthest returns first */
+    ORDER_FARTHEST_TO_NEAREST,
+
+    /** Lidar returns the nearest returns first */
+    ORDER_NEAREST_TO_FARTHEST,
+
+    /** DEPRECATED: Only Present In Old Test Firmware */
+    ORDER_DEPRECATED_STRONGEST_RETURN_FIRST,
+    ORDER_DEPRECATED_LAST_RETURN_FIRST
 };
 
 /** Thermal Shutdown status. */
@@ -354,6 +389,29 @@ struct sensor_config {
      * Refer to UDPProfileIMU for more details.
      */
     optional<UDPProfileIMU> udp_profile_imu;
+
+    /**
+     * The gyro full scale measurement range to use.
+     * Refer to FullScaleRange for more details.
+     */
+    optional<FullScaleRange> gyro_fsr;
+
+    /**
+     * The accelerometer full scale measurement range to use.
+     * Refer to FullScaleRange for more details.
+     */
+    optional<FullScaleRange> accel_fsr;
+
+    /**
+     * The priority of returns for the lidar to output.
+     * Refer to ReturnOrder for more details.
+     */
+    optional<ReturnOrder> return_order;
+
+    /**
+     * The minimum detection range of the lidar in cm.
+     */
+    optional<int> min_range_threshold_cm;
 };
 
 /** Stores data format information. */
@@ -365,36 +423,82 @@ struct data_format {
     std::vector<int>
         pixel_shift_by_row;      ///< shift of pixels by row to enable destagger
     ColumnWindow column_window;  ///< window of columns over which sensor fires
-    UDPProfileLidar udp_profile_lidar;  ///< profile of lidar packet
-    UDPProfileIMU udp_profile_imu;      ///< profile of imu packet
-    uint16_t fps;                ///< frames per second
+    UDPProfileLidar udp_profile_lidar{};  ///< profile of lidar packet
+    UDPProfileIMU udp_profile_imu{};      ///< profile of imu packet
+    uint16_t fps;                         ///< frames per second
 };
 
-/** Stores necessary information from sensor to parse and project sensor data.
- */
+/** Stores from-sensor calibration information */
+struct calibration_status {
+    optional<bool> reflectivity_status;
+    optional<std::string> reflectivity_timestamp;
+};
+
+/** Stores parsed information from metadata and */
 struct sensor_info {
-    [[deprecated("Will be removed in the next version")]] std::string
-        name;               ///< @deprecated Will be removed in the next version
-    std::string sn;         ///< sensor serial number
-    std::string fw_rev;     ///< fw revision
-    lidar_mode mode;        ///< lidar mode of sensor
-    std::string prod_line;  ///< prod line
-    data_format format;     ///< data format of sensor
+    // clang-format off
+    std::string
+        name{};                 ///< user-convenience client-side assignable name, corresponds
+                                ///< to hostname in metadata.json if present
+    std::string sn{};           ///< sensor serial number corresponding to prod_sn in
+                                ///< metadata.json
+    std::string
+        fw_rev{};               ///< fw revision corresponding to build_rev in metadata.json
+    lidar_mode mode{};          ///< lidar mode of sensor
+    std::string prod_line{};    ///< prod line
+    data_format format{};       ///< data format of sensor
     std::vector<double>
-        beam_azimuth_angles;  ///< beam azimuth angles for 3D projection
+        beam_azimuth_angles{};  ///< beam azimuth angles for 3D projection
     std::vector<double>
-        beam_altitude_angles;  ///< beam altitude angles for 3D projection
-    double lidar_origin_to_beam_origin_mm;  ///< distance between lidar origin
-                                            ///< and beam origin in mm
-    mat4d beam_to_lidar_transform;  ///< transform between beam and lidar frame
-    mat4d imu_to_sensor_transform;  ///< transform between sensor coordinate
-                                    ///< frame and imu
-    mat4d lidar_to_sensor_transform;  ///< transform between lidar and sensor
-                                      ///< coordinate frames
-    mat4d extrinsic;                  ///< extrinsic matrix
-    uint32_t init_id;         ///< initialization ID updated every reinit
-    uint16_t udp_port_lidar;  ///< the lidar destination port
-    uint16_t udp_port_imu;    ///< the imu destination port
+        beam_altitude_angles{}; ///< beam altitude angles for 3D projection
+    double lidar_origin_to_beam_origin_mm{};  ///< distance between lidar origin
+                                              ///< and beam origin in mm
+    mat4d beam_to_lidar_transform =
+        mat4d::Zero();          ///< transform between beam and lidar frame
+    mat4d imu_to_sensor_transform =
+        mat4d::Zero();          ///< transform between sensor coordinate
+                                ///< frame and imu
+    mat4d lidar_to_sensor_transform =
+        mat4d::Zero();          ///< transform between lidar and sensor
+                                ///< coordinate frames
+    // TODO read extrinsic from metadata.json in the future
+    mat4d extrinsic =
+        mat4d::Zero();          ///< user-convenience client-side assignable extrinsic
+                                ///< matrix, currently is not read from metadata.json
+    uint32_t init_id{};         ///< initialization ID updated every reinit
+    uint16_t udp_port_lidar{};  ///< the lidar destination port
+    uint16_t udp_port_imu{};    ///< the imu destination port
+
+    std::string build_date{};   ///< build date from FW sensor_info
+    std::string image_rev{};    ///< image rev from FW sensor_info
+    std::string prod_pn{};      ///< prod pn
+    std::string status{};       ///< sensor status at time of pulling metadata
+
+    calibration_status cal{};  ///< sensor calibration
+    sensor_config config{};    ///< parsed sensor config if available from metadata
+
+    /* Constructor from metadata */
+    sensor_info(const std::string& metadata, bool skip_beam_validation = false);
+
+    /* Empty constructor -- keep for  */
+    sensor_info();
+
+    /* Return original metadata string should sensor_info have been
+     * constructed from one  -- this string will be **unchanged** and
+     * will not reflect the changes to fields made to sensor_info*/
+    std::string original_string() const;
+
+    /* Return an updated version of the metadata string reflecting any
+     * changes to the sensor_info.
+     * Errors out if changes are incompatible but does not check for validity */
+    std::string updated_metadata_string() const;
+
+    bool has_fields_equal(const sensor_info& other) const;
+
+   private:
+    std::string
+        original_metadata_string{};  ///< string from which values were parsed
+    // clang-format on
 };
 
 /**
@@ -456,6 +560,22 @@ bool operator==(const sensor_config& lhs, const sensor_config& rhs);
  * @return lhs != rhs
  */
 bool operator!=(const sensor_config& lhs, const sensor_config& rhs);
+
+/**
+ * Equality of sensor calibration.
+ *
+ * @param[in] lhs The first object to compare.
+ * @param[out] rhs The second object to compare.
+ */
+bool operator==(const calibration_status& lhs, const calibration_status& rhs);
+
+/**
+ * Not-Equality of sensor calibration.
+ *
+ * @param[in] lhs The first object to compare.
+ * @param[out] rhs The second object to compare.
+ */
+bool operator!=(const calibration_status& lhs, const calibration_status& rhs);
 
 /**
  * Get a default sensor_info for the given lidar mode.
@@ -532,7 +652,7 @@ std::string to_string(OperatingMode mode);
 /**
  * Get operating mode from string.
  *
- * @param s String to get the operating mode from.
+ * @param[in] s String to get the operating mode from.
  *
  * @return operating mode corresponding to the string, or 0 on error.
  */
@@ -640,10 +760,48 @@ std::string to_string(UDPProfileIMU profile);
 optional<UDPProfileIMU> udp_profile_imu_of_string(const std::string& s);
 
 /**
+ * Get full scale range setting from string
+ *
+ * @param[in] s The string to decode into a full scale range.
+ *
+ * @return full scale range corresponding to the string, or nullopt on error.
+ */
+optional<FullScaleRange> full_scale_range_of_string(const std::string& s);
+
+/**
+ * Get return order setting from string
+ *
+ * @param[in] s The string to decode into a return order.
+ *
+ * @return return order corresponding to the string, or nullopt on error.
+ */
+optional<ReturnOrder> return_order_of_string(const std::string& s);
+
+/**
+ * Get string representation of a Return Order.
+ *
+ * @param[in] return_order The return order to get the string
+ * representation of.
+ *
+ * @return string representation of the return order.
+ */
+std::string to_string(ReturnOrder return_order);
+
+/**
+ * Get string representation of a Full Scale Range.
+ *
+ * @param[in] full_scale_range The shot limiting status to get the string
+ *                             representation of.
+ *
+ * @return string representation of the full scale range.
+ */
+std::string to_string(FullScaleRange full_scale_range);
+
+/**
  * Get string representation of a Shot Limiting Status.
  *
  * @param[in] shot_limiting_status The shot limiting status to get the string
- * representation of.
+ *                                 representation of.
  *
  * @return string representation of the shot limiting status.
  */
@@ -653,7 +811,7 @@ std::string to_string(ShotLimitingStatus shot_limiting_status);
  * Get string representation of Thermal Shutdown Status.
  *
  * @param[in] thermal_shutdown_status The thermal shutdown status to get the
- * string representation of.
+ *                                    string representation of.
  *
  * @return string representation of thermal shutdown status.
  */
@@ -675,10 +833,14 @@ void check_signal_multiplier(const double signal_multiplier);
  * @throw runtime_error if the text is not valid json
  *
  * @param[in] metadata a text blob returned by get_metadata from client.h.
+ * @param[in] skip_beam_validation whether to skip validation on metdata - not
+ *                                 for use on recorded data or metadata
+ *                                 from sensors
  *
  * @return a sensor_info struct populated with a subset of the metadata.
  */
-sensor_info parse_metadata(const std::string& metadata);
+sensor_info parse_metadata(const std::string& metadata,
+                           bool skip_beam_validation = false);
 
 /**
  * Parse metadata given path to a json file.
@@ -686,20 +848,28 @@ sensor_info parse_metadata(const std::string& metadata);
  * @throw runtime_error if json file does not exist or is malformed.
  *
  * @param[in] json_file path to a json file containing sensor metadata.
+ * @param[in] skip_beam_validation whether to skip validation on metadata - not
+ *                                 for use on recorded data or metadata
+ *                                 from sensors
  *
  * @return a sensor_info struct populated with a subset of the metadata.
  */
-sensor_info metadata_from_json(const std::string& json_file);
+sensor_info metadata_from_json(const std::string& json_file,
+                               bool skip_beam_validation = false);
 
 /**
- * Get a string representation of the sensor_info. All fields included. Not
- * equivalent or interchangeable with metadata from sensor.
+ * String representation of the sensor_info. All fields included. NOT equivalent
+ * or interchangeable with metadata from sensor.
  *
  * @param[in] info sensor_info struct
  *
- * @return a json metadata string
+ * @return a debug string in json format
  */
-std::string to_string(const sensor_info& info);
+// clang-format off
+[[deprecated("This is a debug function. Use original_string() or "
+              "updated_metadata_string()")]] std::string
+to_string(const sensor_info& info);
+// clang-format on
 
 /**
  * Parse config text blob from the sensor into a sensor_config struct.
@@ -735,11 +905,32 @@ std::string to_string(const sensor_config& config);
 std::string convert_to_legacy(const std::string& metadata);
 
 /**
+ * Get a string representation of sensor calibration. Only set fields will be
+ * represented.
+ *
+ * @param[in] cal a struct of calibration.
+ *
+ * @return string representation of sensor calibration.
+ */
+
+std::string to_string(const calibration_status& cal);
+
+/**
  * Get client version.
  *
  * @return client version string
  */
 std::string client_version();
+
+/**
+ * Get version information from the metadata.
+ *
+ * @param[in] metadata string.
+ *
+ * @return version corresponding to the string, or invalid_version on error.
+ */
+ouster::util::version firmware_version_from_metadata(
+    const std::string& metadata);
 
 // clang-format off
 /** Tag to identitify a paricular value reported in the sensor channel data
@@ -827,9 +1018,14 @@ std::string to_string(ChanFieldType ft);
  * Use imu_la_{x,y,z} to access the acceleration in the corresponding
  * direction. Use imu_av_{x,y,z} to read the angular velocity.
  */
-class packet_format final {
+class packet_format {
+   protected:
     template <typename T>
     T px_field(const uint8_t* px_buf, ChanField i) const;
+
+    template <typename T, typename SRC, int N>
+    void block_field_impl(Eigen::Ref<img_t<T>> field, ChanField i,
+                          const uint8_t* packet_buf) const;
 
     struct Impl;
     std::shared_ptr<const Impl> impl_;
@@ -838,6 +1034,9 @@ class packet_format final {
         field_types_;
 
    public:
+    packet_format(UDPProfileLidar udp_profile_lidar, size_t pixels_per_column,
+                  size_t columns_per_packet);
+
     packet_format(
         const sensor_info& info);  //< create packet_format from sensor_info
 
@@ -851,13 +1050,14 @@ class packet_format final {
     const size_t imu_packet_size;    ///< imu packet size
     const int columns_per_packet;    ///< columns per lidar packet
     const int pixels_per_column;     ///< pixels per column for lidar
-    [[deprecated]] const int encoder_ticks_per_rev;  ///< @deprecated
 
     const size_t packet_header_size;
     const size_t col_header_size;
     const size_t col_footer_size;
     const size_t col_size;
     const size_t packet_footer_size;
+
+    const uint64_t max_frame_id;
 
     /**
      * Read the packet type packet header.
@@ -875,7 +1075,7 @@ class packet_format final {
      *
      * @return the frame id.
      */
-    uint16_t frame_id(const uint8_t* lidar_buf) const;
+    uint32_t frame_id(const uint8_t* lidar_buf) const;
 
     /**
      * Read the initialization id packet header.
@@ -1023,6 +1223,30 @@ class packet_format final {
     void col_field(const uint8_t* col_buf, ChanField f, T* dst,
                    int dst_stride = 1) const;
 
+    /**
+     * Returns maximum available size of parsing block usable with block_field
+     *
+     * if packet format does not allow for block parsing, returns 0
+     */
+    int block_parsable() const;
+
+    /**
+     * Copy the specified channel field out of a packet measurement block.
+     * Faster traversal than col_field, but has to copy the entire packet all at
+     * once.
+     *
+     * @tparam T T should be an unsigned integer type large enough to store
+     * values of the specified field. Otherwise, data will be truncated.
+     *
+     * @param[out] field destination eigen array
+     * @param[in] f the channel field to copy.
+     * @param[in] lidar_buf the lidar buffer.
+     */
+    template <typename T, int BlockDim,
+              typename std::enable_if<std::is_unsigned<T>::value, T>::type = 0>
+    void block_field(Eigen::Ref<img_t<T>> field, ChanField f,
+                     const uint8_t* lidar_buf) const;
+
     // Per-pixel channel data block accessors
     /**
      * Get pointer to nth pixel of a column buffer.
@@ -1033,43 +1257,6 @@ class packet_format final {
      * @return pointer to nth pixel of a column buffer.
      */
     const uint8_t* nth_px(int n, const uint8_t* col_buf) const;
-
-    /**
-     * Read range from pixel buffer.
-     *
-     * @param[in] px_buf the pixel buffer.
-     *
-     * @return range from pixel buffer.
-     */
-    uint32_t px_range(const uint8_t* px_buf) const;
-
-    /**
-     * Read reflectivity from pixel buffer.
-     *
-     * @param[in] px_buf the pixel buffer.
-     *
-     * @return reflectivity from pixel buffer.
-     */
-    uint16_t px_reflectivity(const uint8_t* px_buf) const;
-
-    /**
-     * Read signal from pixel buffer.
-     *
-     * @param[in] px_buf the pixel buffer.
-     *
-     * @return signal from pixel buffer.
-     */
-    uint16_t px_signal(const uint8_t* px_buf) const;
-
-    // TODO switch to px_near_ir
-    /**
-     * Read ambient from pixel buffer.
-     *
-     * @param[in] px_buf the pixel buffer.
-     *
-     * @return ambient from pixel buffer.
-     */
-    uint16_t px_ambient(const uint8_t* px_buf) const;
 
     // IMU packet accessors
     /**
@@ -1152,18 +1339,93 @@ class packet_format final {
      */
     float imu_av_z(const uint8_t* imu_buf) const;
 
-    /** Declare get_format as friend. */
-    friend const packet_format& get_format(const sensor_info&);
+    /**
+     * Get the mask of possible values that can be parsed by the channel field
+     *
+     * @param[in] f the channel field
+     *
+     * @return mask of possible values
+     */
+    uint64_t field_value_mask(ChanField f) const;
+
+    /**
+     * Get number of bits in the channel field
+     *
+     * @param[in] f the channel field
+     *
+     * @return number of bits
+     */
+    int field_bitness(ChanField f) const;
 };
+
+/** @defgroup OusterClientTypeGetFormat Get Packet Format functions */
 
 /**
  * Get a packet parser for a particular data format.
+ *
+ * @ingroup OusterClientTypeGetFormat
  *
  * @param[in] info parameters provided by the sensor.
  *
  * @return a packet_format suitable for parsing UDP packets sent by the sensor.
  */
 const packet_format& get_format(const sensor_info& info);
+
+/**
+ * Get a packet parser for a particular data format.
+ *
+ * @ingroup OusterClientTypeGetFormat
+ *
+ * @param[in] udp_profile_lidar   lidar profile
+ * @param[in] pixels_per_column   pixels per column
+ * @param[in] columns_per_packet  columns per packet
+ *
+ * @return a packet_format suitable for parsing UDP packets sent by the sensor.
+ */
+const packet_format& get_format(UDPProfileLidar udp_profile_lidar,
+                                size_t pixels_per_column,
+                                size_t columns_per_packet);
+
+/**
+ * Encapsulate a packet buffer and attributes associated with it.
+ */
+struct Packet {
+    uint64_t host_timestamp;
+    std::vector<uint8_t> buf;
+
+    Packet(int size = 65536) : host_timestamp{0} {
+        // this is necessary due to how client works - it may read size() + 1
+        // bytes into the packet in case of rogue packet coming through
+        buf.reserve(size + 1);
+        buf.resize(size, 0);
+    }
+
+    template <typename PacketType>
+    PacketType& as() {
+        return static_cast<PacketType&>(*this);
+    }
+};
+
+/**
+ * Encapsulate a lidar packet buffer and attributes associated with it.
+ */
+struct LidarPacket : public Packet {
+    using Packet::Packet;
+};
+
+/**
+ * Encapsulate an imu packet buffer and attributes associated with it.
+ */
+struct ImuPacket : public Packet {
+    using Packet::Packet;
+};
+
+namespace impl {
+
+/** Maximum number of allowed lidar profiles */
+constexpr int MAX_NUM_PROFILES = 32;
+
+}  // namespace impl
 
 }  // namespace sensor
 }  // namespace ouster
