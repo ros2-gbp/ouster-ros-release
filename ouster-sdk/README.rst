@@ -9,15 +9,17 @@ Ouster SDK - libraries and tools for Ouster Lidar Sensors
 Cross-platform C++/Python Ouster Sensor Development Toolkit
 
 To get started with our sensors, client, and visualizer, please see our SDK and sensor documentation:
+ouster-sdk/index.html
 
 - `Ouster SDK Documentation <https://static.ouster.dev/sdk-docs/index.html>`_
-- `Ouster Sensor Documentaion <https://static.ouster.dev/sensor-docs>`_ 
+- `Ouster Sensor Public Documentaion <https://static.ouster.dev/sensor-docs>`_
 
 This repository contains Ouster SDK source code for connecting to and configuring ouster sensors,
 reading and visualizing data.
 
 * `ouster_client <ouster_client/>`_ contains an example C++ client for ouster sensors
 * `ouster_pcap <ouster_pcap/>`_ contains C++ pcap functions for ouster sensors
+* `ouster_osf <ouster_osf/>`_ contains C++ OSF library to store ouster sensors data
 * `ouster_viz <ouster_viz/>`_ contains a customizable point cloud visualizer
 * `python <python/>`_ contains the code for the ouster sensor python SDK (``ouster-sdk`` Python package)
 
