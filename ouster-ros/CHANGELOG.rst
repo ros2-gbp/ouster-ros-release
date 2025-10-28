@@ -2,30 +2,112 @@
 Changelog for package ouster_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.11.1 (2023-11-01)
--------------------
-* breaking: rename ouster_msgs to ouster_sensor_msgs
-* shutdown the driver when unable to connect to the sensor on startup
-
-
-0.10.4 (2023-08-31)
--------------------
-* breaking: publish PCL point clouds destaggered.
-* introduced a new launch file parameter ``ptp_utc_tai_offset`` which represent offset in seconds
-  to be applied to all ROS messages the driver generates when ``TIME_FROM_PTP_1588`` timestamp mode
-  is used.
-* fix: destagger columns timestamp when generating destaggered point clouds.
-* Use the local copy of the LICENSE file during install
-* Contributors: Ussama Naal
-
-0.10.3 (2023-08-15)
--------------------
-* Add per package LICENSE file
-* manifest symbolic links as files
-* Contributors: Ussama Naal
-
-0.10.2 (2023-08-15)
--------------------
+0.13.15 (2025-10-24)
+--------------------
+* Drop whole archive linkage (#489)
+* fix-rolling build (#483)
+* Correct pointcloud.is_dense flag (#473)
+* Port the pointcloud mask feature to ROS2 (#462)
+  * Port the pointcloud mask feature to ROS2
+  * Base Image fixed
+  * Update README and exclude iron from the build
+* [ROS2] Expose the vertical beam reduction param (#444)
+  * Expose the vertical beam reduction value + rename arg + Better handling of deprecated topic names
+* ROS-317: Fix simulation in replay mode (#440)
+  * Use node clock to properly populate the timestamp in replay modes
+  * Update changelog and package number
+* Implement a padding-free version of pcl::PointXYZI (#439)
+* Add a new storage param to record.launch.xml (#437)
+  * Add storage param to record
+* [ros2] Fix install directories (#433)
+  * Cmakelists: Fix install directories
+  * Bump package.xml patch version
+  * Update changelog
+  ---------
+  Co-authored-by: Michael Wiznitzer <mwiznitzer@neyarobotics.com>
+* Port the changes to ROS2 (#430)
+  * Port the changes to ROS2
+  * Update sensor.*.launch
+* SW-6906: publish sensor telemetry in ouster ros (#422)
+  * Port changes from ROS1 to ROS2
+  * Mention TLM as an option in yaml configs
+* Enable auto start on replay node (#421)
+* ROS-389 [rolling/humble/iron/jazzy]: replay-improvments-and-fixes (#393)
+  Remap metadata topic + Support loop capability in pcap replay + Add play_delay & play_rate for replay
+  Added a launch file parameter pub_static_tf to disable sensor transforms broadcast
+  ---------
+  Co-authored-by: Guillaume Doisy <guillaume@dexory.com>
+* ROS-350[HUMBLE/IRON/JAZZY]: 't' timestamp field content is not plausible (#387)
+  Align timestamps based on staggered/destaggered option
+* HOTFIX/ROS-382: os_driver fails when raw option is enabled (#384)
+  * Fix os_driver fails when RAW option is enabled
+  * Replace lifecycle_publisher with regular publisher for the os_pcap
+* HOTFIX/ROS-376-initialize-the-sensor-with-launch-config-params (#380)
+  * Invoke parse_config_from_ros_parameters on node init
+  * Fix a typo + Add a note regarding the recommendation
+* [HUMBLE|IRON|JAZZY] Port ROS-363 to ROS2 (#369)
+  * Port ROS-363 to ROS2
+  * Turn off OSF
+  * Update package version and CHANGELOG.rst + up  the default max range  to 10000.0 meters
+* ROS-368[HUMBLE|IRON|JAZZY]: Unable to use the replay mode due to unknown substitution arg (#370)
+  * Fix replay unknown substitution arg
+  * Fix the definition of _loop variable
+  * Move remap verb to the node
+* ROS-119: ouster-ros driver automatic reconnection [HUMBLE/IRON/JAZZY] (#362)
+  * Port sensor reconnection logic to ROS 2
+  * Add Jazzy to the build!
+  * Update README and checkout
+  * Add a note about not being able to properly handle invalid configuration
+  * Implement automatic start for sensor/record modes
+* ROS-227: Set LIDAR FOV on startup and add an option to persist the config [HUMBLE/IRON] (#357)
+  * Port azimuth window and persist config changes to ROS2
+* ROS2[HUMBLE/IRON] add pcap reader (#355)
+  * Port the pcap replay to ros2-foxy
+  * Add time update
+* Support FUSA dual returns udp profile [HUMBLE/IRON] (#335)
+  * Add support for FUSA profile + set xyz to NaNs on zero range
+* Implement lock free ring buffer with throttling [HUMBLE/IRON] (#321)
+  * Implement lock free ring buffer with throttling
+  - (cherry picked from commit ade5822aba552f3839cf077daea44dc26869026b)
+  * Update CHANGELOG and package version
+* docs: fix spelling mistakes (#296)
+* Use timeout when waiting for packets to be proceed in case they don't come (#293)
+* ROS-196: laser scan from ros driver is not properly aligned with point cloud [humble] (#203)
+  * Apply destagger to laser scan + Add laser to RVIZ
+  * Align LaserScan with the PointCloud
+  * Apply proper pixel shift
+  * Resolve the issue of zeroed laserscan on dual mode
+  * Address an issue where LaserScan appeared different on FW prior to 2.4
+  * Fix the issue for odd numbers
+  * List selected sensors on the main page + Update RVIZ config to highlight the 2D LaserScan.
+* SW-5623: Bump up ouster_client to 20231031 release (#262)
+  * Bump ouster-client to 2023103 release
+  * fix: gracefully stop the driver when shutdown is requested.
+* SW-5466: Support Velodyne point type in the ROS driver amendments (#254)
+  * Add support to control point_type through launch.xml files +
+  * Add a note to CHANGELOG about the breaking change for ptp/utc time offset
+* SW-5466: Support Velodyne and other point types in ouster-ros driver (#216)
+  * Quick protoype of Velodyne point type
+  * Add PointXYZIR point type + other major pcl point types
+  * Include point meta functions and point transform by the ouster_ros namesapce
+  * Wrap point meta functions with a namespace and use shorter names for the functions +
+  * Add a seed test module for the point_cloud_compose methods +
+  Add description for the point_cloud_compose methods + refactor code and add compile time checks.
+  * Propagate error state, warn about potential incompatible profile, propagate error state
+  * Add minimal documentation about the new `point_type` parameter.
+* SW-5607: rename package ouster_msgs to avoid package name conflict in ros index (#244)
+  * rename package ouster_msgs to avoid conflict name conflict in ros index
+  * set ouster_sensor_msgs version number to match with ouster_ros package
+* Shutdown when can not connect to sensor on startup in ROS2 (Humble/Iron) (#211)
+  * Shutdown when can not connect to sensor on startup
+  * Apply same behavior to independent launch file
+  * Update changelog and package version
+* SW-5459: add a parameter for utc/tai time offset (#195)
+  * Implemented UTC/TAI offset for the PTP timestamp mode
+  * Make sure all the timestamp values of LidarScan are utc corrected
+  * Modify timestamp values before producing a PointCloud
+  * Remove no longer needed comment from the Dockerfile
+  * Destagger timestamp when generating destagger point clouds
 * SW-5396: publish point cloud in destaggered form (#182)
   * Quick implementtion of cloud destaggering
   * Perform destaggering of point clouds during the copy + add a viz-reliable file + wrap all classes in ouster_ros
@@ -211,4 +293,4 @@ Changelog for package ouster_ros
 * Drop std_msgs
 * Drop std_msgs
 * ROS2 driver prototype
-* Contributors: Ussama Naal
+* Contributors: Andre Nguyen, Michael Wiznitzer, Ussama Naal, ralwing
