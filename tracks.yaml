@@ -68,14 +68,14 @@ tracks:
       :{release_inc} --os-name fedora
     - git-bloom-generate -y rosrpm --prefix release/:{ros_distro} :{ros_distro} -i
       :{release_inc} --os-name rhel
-    devel_branch: rolling-devel
+    devel_branch: jazzy-devel
     last_release: rolling-0.11.1
     last_version: 0.11.1
     name: ouster-ros
     patches: null
     release_inc: '6'
     release_repo_url: null
-    release_tag: rolling-:{version}
+    release_tag: jazzy-:{version}
     ros_distro: jazzy
     vcs_type: git
     vcs_uri: https://github.com/ouster-lidar/ouster-ros.git
