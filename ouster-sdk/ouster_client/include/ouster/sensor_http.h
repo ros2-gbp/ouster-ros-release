@@ -10,6 +10,7 @@
 #pragma once
 
 #include <json/json.h>
+#include <ouster/defaults.h>
 #include <ouster/version.h>
 
 #include <memory>
@@ -121,22 +122,34 @@ class SensorHttp {
      * Retrieves sensor firmware version information as a string.
      *
      * @param[in] hostname hostname of the sensor to communicate with.
+     * @param[in] timeout_sec The timeout to use in seconds, this argument
+     *                        is optional.
      */
-    static std::string firmware_version_string(const std::string& hostname);
+    static std::string firmware_version_string(
+        const std::string& hostname,
+        int timeout_sec = DEFAULT_HTTP_REQUEST_TIMEOUT_SECONDS);
 
     /**
      * Retrieves sensor firmware version information.
      *
      * @param[in] hostname hostname of the sensor to communicate with.
+     * @param[in] timeout_sec The timeout to use in seconds, this argument
+     *                        is optional.
      */
-    static ouster::util::version firmware_version(const std::string& hostname);
+    static ouster::util::version firmware_version(
+        const std::string& hostname,
+        int timeout_sec = DEFAULT_HTTP_REQUEST_TIMEOUT_SECONDS);
 
     /**
      * Creates an instance of the SensorHttp interface.
      *
      * @param[in] hostname hostname of the sensor to communicate with.
+     * @param[in] timeout_sec The timeout to use in seconds, this argument
+     *                        is optional.
      */
-    static std::unique_ptr<SensorHttp> create(const std::string& hostname);
+    static std::unique_ptr<SensorHttp> create(
+        const std::string& hostname,
+        int timeout_sec = DEFAULT_HTTP_REQUEST_TIMEOUT_SECONDS);
 };
 
 }  // namespace util
