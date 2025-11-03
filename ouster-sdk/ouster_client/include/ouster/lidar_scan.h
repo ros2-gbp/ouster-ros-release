@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "ouster/defaults.h"
 #include "ouster/types.h"
 
 namespace ouster {
@@ -50,12 +51,15 @@ class LidarScan {
 
    private:
     Header<uint64_t> timestamp_;
+    Header<uint64_t> packet_timestamp_;
     Header<uint16_t> measurement_id_;
     Header<uint32_t> status_;
+    std::vector<mat4d> pose_;
     std::map<sensor::ChanField, impl::FieldSlot> fields_;
     LidarScanFieldTypes field_types_;
 
-    LidarScan(size_t w, size_t h, LidarScanFieldTypes field_types);
+    LidarScan(size_t w, size_t h, LidarScanFieldTypes field_types,
+              size_t columns_per_packet);
 
    public:
     /**
@@ -89,7 +93,7 @@ class LidarScan {
      * @warning Members variables: use with caution, some of these will become
      * private.
      */
-    int32_t frame_id{-1};
+    int64_t frame_id{-1};
 
     using FieldIter =
         decltype(field_types_)::const_iterator;  ///< An STL Iterator of the
@@ -101,21 +105,27 @@ class LidarScan {
     /**
      * Initialize a scan with fields configured for the LEGACY udp profile.
      *
-     * @param[in] w horizontal resoulution, i.e. the number of measurements per
-     * scan.
+     * @param[in] w horizontal resolution, i.e. the number of measurements per
+     *              scan.
      * @param[in] h vertical resolution, i.e. the number of channels.
+     *
+     * Note, the number of columns per packet is set to the default
+     * (DEFAULT_COLUMNS_PER_PACKET).
      */
     LidarScan(size_t w, size_t h);
 
     /**
      * Initialize a scan with the default fields for a particular udp profile.
      *
-     * @param[in] w horizontal resoulution, i.e. the number of measurements per
-     * scan.
+     * @param[in] w horizontal resolution, i.e. the number of measurements per
+     *              scan.
      * @param[in] h vertical resolution, i.e. the number of channels.
      * @param[in] profile udp profile.
+     * @param[in] columns_per_packet The number of columns per packet,
+     *                               this argument is optional.
      */
-    LidarScan(size_t w, size_t h, sensor::UDPProfileLidar profile);
+    LidarScan(size_t w, size_t h, sensor::UDPProfileLidar profile,
+              size_t columns_per_packet = DEFAULT_COLUMNS_PER_PACKET);
 
     /**
      * Initialize a scan with a custom set of fields.
@@ -123,14 +133,17 @@ class LidarScan {
      * @tparam Iterator A standard template iterator for the custom fields.
      *
      * @param[in] w horizontal resoulution, i.e. the number of measurements per
-     * scan.
+     *              scan.
      * @param[in] h vertical resolution, i.e. the number of channels.
      * @param[in] begin begin iterator of pairs of channel fields and types.
      * @param[in] end end iterator of pairs of channel fields and types.
+     * @param[in] columns_per_packet The number of columns per packet,
+     *                               this argument is optional.
      */
     template <typename Iterator>
-    LidarScan(size_t w, size_t h, Iterator begin, Iterator end)
-        : LidarScan(w, h, {begin, end}){};
+    LidarScan(size_t w, size_t h, Iterator begin, Iterator end,
+              size_t columns_per_packet = DEFAULT_COLUMNS_PER_PACKET)
+        : LidarScan(w, h, {begin, end}, columns_per_packet){};
 
     /**
      * Initialize a lidar scan from another lidar scan.
@@ -139,17 +152,30 @@ class LidarScan {
      */
     LidarScan(const LidarScan& other);
 
+    /**
+     * Initialize a lidar scan from another with only the indicated fields.
+     * Casts, zero pads or removes fields from the original scan if necessary.
+     *
+     * @param[in] other The other lidar scan to initialize from.
+     * @param[in] fields Fields to have in new lidar scan.
+     */
+    LidarScan(const LidarScan& other, const LidarScanFieldTypes& fields);
+
     /** @copydoc LidarScan(const LidarScan& other) */
     LidarScan(LidarScan&& other);
+
+    /**
+     * Copy.
+     *
+     * @param[in] other The lidar scan to copy from.
+     */
+    LidarScan& operator=(const LidarScan& other);
 
     /**
      * Copy via Move semantic.
      *
      * @param[in] other The lidar scan to copy from.
      */
-    LidarScan& operator=(const LidarScan& other);
-
-    /** @copydoc operator=(const LidarScan& other) */
     LidarScan& operator=(LidarScan&& other);
 
     /**
@@ -168,6 +194,7 @@ class LidarScan {
     sensor::ThermalShutdownStatus thermal_shutdown() const;
 
     /**
+     * @defgroup ClientLidarScanField Access fields in a lidar scan
      * Access a lidar data field.
      *
      * @throw std::invalid_argument if T does not match the runtime field type.
@@ -180,11 +207,17 @@ class LidarScan {
      *
      * @return a view of the field data.
      */
+
+    /**
+     * @copydoc ClientLidarScanField
+     */
     template <typename T = uint32_t,
               typename std::enable_if<std::is_unsigned<T>::value, T>::type = 0>
     Eigen::Ref<img_t<T>> field(sensor::ChanField f);
 
-    /** @copydoc field(Field f) */
+    /**
+     * @copydoc ClientLidarScanField
+     */
     template <typename T = uint32_t,
               typename std::enable_if<std::is_unsigned<T>::value, T>::type = 0>
     Eigen::Ref<const img_t<T>> field(sensor::ChanField f) const;
@@ -217,6 +250,27 @@ class LidarScan {
     Eigen::Ref<const Header<uint64_t>> timestamp() const;
 
     /**
+     * Access the packet timestamp headers (usually host time).
+     *
+     * @return a view of timestamp as a w-element vector.
+     */
+    Eigen::Ref<Header<uint64_t>> packet_timestamp();
+
+    /**
+     * Access the host timestamp headers (usually host time).
+     *
+     * @return a view of timestamp as a w-element vector.
+     */
+    Eigen::Ref<const Header<uint64_t>> packet_timestamp() const;
+
+    /**
+     * Return the first valid packet timestamp
+     *
+     * @return the first valid packet timestamp, 0 if none available
+     */
+    uint64_t get_first_valid_packet_timestamp() const;
+
+    /**
      * Access the measurement id headers.
      *
      * @return a view of measurement ids as a w-element vector.
@@ -235,6 +289,15 @@ class LidarScan {
 
     /** @copydoc status() */
     Eigen::Ref<const Header<uint32_t>> status() const;
+
+    /**
+     * Access the vector of poses (per each timestamp).
+     *
+     * @return a reference to vector with poses (4x4) homogeneous.
+     */
+    std::vector<mat4d>& pose();
+    /** @copydoc pose() */
+    const std::vector<mat4d>& pose() const;
 
     /**
      * Assess completeness of scan.
@@ -263,6 +326,15 @@ std::string to_string(const LidarScanFieldTypes& field_types);
  * @return The lidar scan field types
  */
 LidarScanFieldTypes get_field_types(const LidarScan& ls);
+
+/**
+ * Get the lidar scan field types from lidar profile
+ *
+ * @param[in] udp_profile_lidar lidar profile
+ *
+ * @return The lidar scan field types
+ */
+LidarScanFieldTypes get_field_types(sensor::UDPProfileLidar udp_profile_lidar);
 
 /**
  * Get the lidar scan field types from sensor info
@@ -449,8 +521,13 @@ class ScanBatcher {
     std::ptrdiff_t h;
     uint16_t next_valid_m_id;
     uint16_t next_headers_m_id;
+    uint16_t next_valid_packet_id;
     std::vector<uint8_t> cache;
+    uint64_t cache_packet_ts;
     bool cached_packet = false;
+
+    void _parse_by_col(const uint8_t* packet_buf, LidarScan& ls);
+    void _parse_by_block(const uint8_t* packet_buf, LidarScan& ls);
 
    public:
     sensor::packet_format pf;  ///< The packet format object used for decoding
@@ -473,55 +550,41 @@ class ScanBatcher {
 
     /**
      * Add a packet to the scan.
+     * @deprecated this method is deprecated in favor of one that accepts a
+     * reference to a LidarPacket.
      *
-     * @param[in] packet_buf the lidar packet.
+     * @param[in] packet_buf a buffer containing raw bytes from a lidar packet.
      * @param[in] ls lidar scan to populate.
      *
      * @return true when the provided lidar scan is ready to use.
      */
-    bool operator()(const uint8_t* packet_buf, LidarScan& ls);
+    [[deprecated(
+        "Use ScanBatcher::operator(LidarPacket&, LidarScan&) instead.")]] bool
+    operator()(const uint8_t* packet_buf, LidarScan& ls);
+
+    /**
+     * Add a packet to the scan.
+     *
+     * @param[in] packet a LidarPacket.
+     * @param[in] ls lidar scan to populate.
+     *
+     * @return true when the provided lidar scan is ready to use.
+     */
+    bool operator()(const ouster::sensor::LidarPacket& packet, LidarScan& ls);
+
+    /**
+     * Add a packet to the scan.
+     *
+     * @param[in] packet_buf a buffer containing raw bytes from a lidar packet.
+     * @param[in] packet_ts timestamp of the packet (usually HOST time on
+     * receive).
+     * @param[in] ls lidar scan to populate.
+     *
+     * @return true when the provided lidar scan is ready to use.
+     */
+    bool operator()(const uint8_t* packet_buf, uint64_t packet_ts,
+                    LidarScan& ls);
 };
-
-/**
- * Imu Data
- */
-struct Imu {
-    union {
-        std::array<double, 3> angular_vel;
-        struct {
-            double wx, wy, wz;
-        };
-    };
-    union {
-        std::array<double, 3> linear_accel;
-        struct {
-            double ax, ay, az;
-        };
-    };
-    union {
-        std::array<uint64_t, 3> ts;
-        struct {
-            uint64_t sys_ts, accel_ts, gyro_ts;
-        };
-    };
-};
-
-/** Equality for Imu */
-inline bool operator==(const Imu& a, const Imu& b) {
-    return a.angular_vel == b.angular_vel && a.linear_accel == b.linear_accel &&
-           a.ts == b.ts;
-};
-
-/** Not Equality for Imu */
-inline bool operator!=(const Imu& a, const Imu& b) {
-    return !(a == b);
-};
-
-std::string to_string(const Imu& imu);
-
-/// Reconstructs buf with UDP imu_packet to osf::Imu object
-void packet_to_imu(const uint8_t* buf, const ouster::sensor::packet_format& pf,
-                   Imu& imu);
 
 }  // namespace ouster
 
