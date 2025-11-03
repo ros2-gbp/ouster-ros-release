@@ -8,10 +8,12 @@
 
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <string>
 
+#include "ouster/defaults.h"
 #include "ouster/types.h"
 #include "ouster/version.h"
 
@@ -88,15 +90,16 @@ std::shared_ptr<client> init_client(const std::string& hostname, int lidar_port,
  * @param[in] imu_port port on which the sensor will send imu data. When
  * using zero the method will automatically acquire and assign any free port.
  * @param[in] timeout_sec how long to wait for the sensor to initialize.
+ * @param[in] persist_config if true, persists sensor settings between restarts
  *
  * @return pointer owning the resources associated with the connection.
  */
-std::shared_ptr<client> init_client(const std::string& hostname,
-                                    const std::string& udp_dest_host,
-                                    lidar_mode ld_mode = MODE_UNSPEC,
-                                    timestamp_mode ts_mode = TIME_FROM_UNSPEC,
-                                    int lidar_port = 0, int imu_port = 0,
-                                    int timeout_sec = 60);
+std::shared_ptr<client> init_client(
+    const std::string& hostname, const std::string& udp_dest_host,
+    lidar_mode ld_mode = MODE_UNSPEC, timestamp_mode ts_mode = TIME_FROM_UNSPEC,
+    int lidar_port = 0, int imu_port = 0,
+    int timeout_sec = DEFAULT_HTTP_REQUEST_TIMEOUT_SECONDS,
+    bool persist_config = false);
 
 /**
  * [BETA] Connect to and configure the sensor and start listening for data via
@@ -104,11 +107,12 @@ std::shared_ptr<client> init_client(const std::string& hostname,
  *
  * @param[in] hostname hostname or ip of the sensor.
  * @param[in] config sensor config to set on sensor.
- * @param[in] mtp_dest_host multicast ip address where the sensor should send
- * data.
+ * @param[in] mtp_dest_host the address of the host network interface that
+ * should join the multicast group; if empty, use any appropriate interface.
  * @param[in] main a flag that indicates this is the main connection to the
  * sensor in an multicast setup.
  * @param[in] timeout_sec how long to wait for the sensor to initialize.
+ * @param[in] persist_config if true, persists sensor settings between restarts
  *
  * @return pointer owning the resources associated with the connection.
  *
@@ -116,10 +120,11 @@ std::shared_ptr<client> init_client(const std::string& hostname,
  * the sensor, otherwise only the port values within the config object will be
  * used and the rest will be ignored.
  */
-std::shared_ptr<client> mtp_init_client(const std::string& hostname,
-                                        const sensor_config& config,
-                                        const std::string& mtp_dest_host,
-                                        bool main, int timeout_sec = 60);
+std::shared_ptr<client> mtp_init_client(
+    const std::string& hostname, const sensor_config& config,
+    const std::string& mtp_dest_host, bool main,
+    int timeout_sec = DEFAULT_HTTP_REQUEST_TIMEOUT_SECONDS,
+    bool persist_config = false);
 
 /** @}*/
 
@@ -127,7 +132,7 @@ std::shared_ptr<client> mtp_init_client(const std::string& hostname,
  * Block for up to timeout_sec until either data is ready or an error occurs.
  *
  * NOTE: will return immediately if LIDAR_DATA or IMU_DATA are set and not
- * cleared by read_lidar_data() and read_imu_data() before the next call.
+ * cleared by read_lidar_packet() and read_imu_packet() before the next call.
  *
  * @param[in] cli client returned by init_client associated with the connection.
  * @param[in] timeout_sec seconds to block while waiting for data.
@@ -152,6 +157,42 @@ bool read_lidar_packet(const client& cli, uint8_t* buf,
                        const packet_format& pf);
 
 /**
+ * Read lidar data from the sensor. Will not block.
+ *
+ * @param[in] cli client returned by init_client associated with the connection.
+ * @param[out] buf buffer to which to write lidar data. Must be at least
+ * `bytes + 1` bytes.
+ * @param[in] bytes expected number of bytes in the packet
+ *
+ * @return true if a lidar packet was successfully read.
+ */
+bool read_lidar_packet(const client& cli, uint8_t* buf, size_t bytes);
+
+/**
+ * Read lidar data from the sensor. Will not block.
+ *
+ * @param[in] cli client returned by init_client associated with the connection.
+ * @param[out] packet A LidarPacket to store lidar data read from a sensor.
+ * Expects the packet to have *correct* number of bytes allocated for the
+ * packet. In addition, the LidarPacket's host_timestamp attribute is also set.
+ *
+ * @return true if a lidar packet was successfully read.
+ */
+bool read_lidar_packet(const client& cli, LidarPacket& packet);
+
+/**
+ * Read imu data from the sensor. Will not block.
+ *
+ * @param[in] cli client returned by init_client associated with the connection.
+ * @param[out] buf buffer to which to write lidar data. Must be at least
+ * `bytes + 1` bytes.
+ * @param[in] bytes expected number of bytes in the packet
+ *
+ * @return true if a lidar packet was successfully read.
+ */
+bool read_imu_packet(const client& cli, uint8_t* buf, size_t bytes);
+
+/**
  * Read imu data from the sensor. Will not block.
  *
  * @param[in] cli client returned by init_client associated with the connection.
@@ -164,13 +205,27 @@ bool read_lidar_packet(const client& cli, uint8_t* buf,
 bool read_imu_packet(const client& cli, uint8_t* buf, const packet_format& pf);
 
 /**
+ * Read imu data from the sensor. Will not block.
+ *
+ * @param[in] cli client returned by init_client associated with the connection.
+ * @param[out] packet An ImuPacket to store imu data read from a sensor. Expects
+ * the packet to have *correct* number of bytes allocated for the packet. In
+ * addition, the ImuPacket's host_timestamp attribute is also set.
+ *
+ * @return true if an imu packet was successfully read.
+ */
+bool read_imu_packet(const client& cli, ImuPacket& packet);
+
+/**
  * Get metadata text blob from the sensor.
  *
  * Will attempt to fetch from the network if not already populated.
  *
  * @throw runtime_error if the sensor is in ERROR state, the firmware version
  * used to initialize the HTTP or TCP client is invalid, the metadata could
- * not be retrieved from the sensor, or the response could not be parsed.
+ * not be retrieved from the sensor within the timeout period,
+ * a timeout occured while waiting for the sensor to finish initializing,
+ * or the response could not be parsed.
  *
  * @param[in] cli client returned by init_client associated with the connection.
  * @param[in] timeout_sec how long to wait for the sensor to initialize.
@@ -178,7 +233,8 @@ bool read_imu_packet(const client& cli, uint8_t* buf, const packet_format& pf);
  *
  * @return a text blob of metadata parseable into a sensor_info struct.
  */
-std::string get_metadata(client& cli, int timeout_sec = 60,
+std::string get_metadata(client& cli,
+                         int timeout_sec = DEFAULT_HTTP_REQUEST_TIMEOUT_SECONDS,
                          bool legacy_format = false);
 
 /**
@@ -189,11 +245,14 @@ std::string get_metadata(client& cli, int timeout_sec = 60,
  * @param[in] hostname sensor hostname.
  * @param[out] config sensor config to populate.
  * @param[in] active whether to pull active or passive configs.
+ * @param[in] timeout_sec set the timeout for the request,
+ *                        this argument is optional.
  *
  * @return true if sensor config successfully populated.
  */
 bool get_config(const std::string& hostname, sensor_config& config,
-                bool active = true);
+                bool active = true,
+                int timeout_sec = DEFAULT_HTTP_REQUEST_TIMEOUT_SECONDS);
 
 // clang-format off
 /**
@@ -217,11 +276,13 @@ enum config_flags : uint8_t {
  * @param[in] hostname sensor hostname.
  * @param[in] config sensor config.
  * @param[in] config_flags flags to pass in.
+ * @param[in] timeout_sec timeout in seconds for http requests
  *
  * @return true if config params successfuly set on sensor.
  */
 bool set_config(const std::string& hostname, const sensor_config& config,
-                uint8_t config_flags = 0);
+                uint8_t config_flags = 0,
+                int timeout_sec = DEFAULT_HTTP_REQUEST_TIMEOUT_SECONDS);
 
 /**
  * Return the port used to listen for lidar UDP data.
@@ -230,7 +291,7 @@ bool set_config(const std::string& hostname, const sensor_config& config,
  *
  * @return the port number.
  */
-int get_lidar_port(client& cli);
+int get_lidar_port(const client& cli);
 
 /**
  * Return the port used to listen for imu UDP data.
@@ -239,7 +300,7 @@ int get_lidar_port(client& cli);
  *
  * @return the port number.
  */
-int get_imu_port(client& cli);
+int get_imu_port(const client& cli);
 
 /**
  * Check if ip address in multicast range.
