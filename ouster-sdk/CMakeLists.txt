@@ -1,4 +1,10 @@
 cmake_minimum_required(VERSION 3.10...3.22)
+if(DEFINED CMAKE_CXX_COMPILER_LAUNCHER )
+  message("Using CXX Launcher: ${CMAKE_CXX_COMPILER_LAUNCHER}")
+  if( DEFINED ENV{CCACHE_DIR} )
+    message("Using CCACHE_DIR: $ENV{CCACHE_DIR}")
+  endif()
+endif()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(DefaultBuildType)
@@ -7,16 +13,17 @@ include(DefaultBuildType)
 include(VcpkgEnv)
 
 # ==== Project Name ====
-project(ouster_example VERSION 20230403)
+project(ouster_example VERSION 20231031)
 
 # generate version header
-set(OusterSDK_VERSION_STRING 0.8.1)
+set(OusterSDK_VERSION_STRING 0.11.1)
 include(VersionGen)
 
 # ==== Options ====
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build position independent code." ON)
 option(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 option(BUILD_PCAP "Build pcap utils." ON)
+option(BUILD_OSF "Build Ouster OSF library." ON)
 option(BUILD_VIZ "Build Ouster visualizer." ON)
 option(BUILD_TESTING "Build tests" OFF)
 option(BUILD_EXAMPLES "Build C++ examples" OFF)
@@ -56,6 +63,10 @@ if(BUILD_PCAP)
   add_subdirectory(ouster_pcap)
 endif()
 
+if(BUILD_OSF)
+  add_subdirectory(ouster_osf)
+endif()
+
 if(BUILD_VIZ)
   add_subdirectory(ouster_viz)
 endif()
@@ -88,7 +99,7 @@ set(CPACK_SOURCE_IGNORE_FILES /.git /dist)
 set(CPACK_DEBIAN_PACKAGE_NAME ouster-sdk)
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 set(CPACK_DEBIAN_PACKAGE_DEPENDS
-  "libjsoncpp-dev, libeigen3-dev, libtins-dev, libglfw3-dev, libglew-dev, libspdlog-dev")
+  "libjsoncpp-dev, libeigen3-dev, libtins-dev, libglfw3-dev, libglew-dev, libspdlog-dev, libpng-dev, libflatbuffers-dev")
 include(CPack)
 
 # ==== Install ====
@@ -107,6 +118,13 @@ configure_file(cmake/OusterSDKConfig.cmake.in OusterSDKConfig.cmake @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/OusterSDKConfig.cmake"
   "${CMAKE_CURRENT_BINARY_DIR}/OusterSDKConfigVersion.cmake"
   DESTINATION lib/cmake/OusterSDK)
+if(BUILD_PCAP)
+  # Install the findpcap cmake file for install targets.
+  # For some reason it only works if you rename it to PcapConfig.cmake
+  install(FILES "cmake/FindPcap.cmake"
+    DESTINATION lib/cmake/OusterSDK
+    RENAME PcapConfig.cmake)
+endif()
 
 install(FILES LICENSE LICENSE-bin
   DESTINATION share)
