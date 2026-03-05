@@ -5,89 +5,22 @@
  * @file
  * @brief Simple version struct
  */
-#pragma once
 
 #include <cstdint>
-#include <sstream>
 #include <string>
 
-#include "ouster/deprecation.h"
-#include "ouster/visibility.h"
+#pragma once
 
 namespace ouster {
-namespace sdk {
-namespace core {
+namespace util {
 
-/**
- * Represents a semantic version such as major.minor.patch
- * with optional metadata fields.
- */
-struct OUSTER_API_CLASS Version {
-    uint16_t major{};  ///< Major version number
-    uint16_t minor{};  ///< Minor version number
-    uint16_t patch{};  ///< Patch(or revision) version number
-
-    std::string stage{};       ///< Release stage name, if present.
-    std::string machine{};     ///< Machine name, if present.
-    std::string prerelease{};  ///< Prerelease name (e.g. rc1), if present.
-    std::string build{};       ///< Build info, if present. Often a date string.
-
-    /**
-     * Construct a default version object.
-     */
-    OUSTER_API_FUNCTION Version() = default;
-
-    /**
-     * Construct a default version object with the specified version.
-     * @param[in] maj Major version number.
-     * @param[in] min Minor version number.
-     * @param[in] pat Patch version number.
-     */
-    OUSTER_API_FUNCTION Version(uint16_t maj, uint16_t min, uint16_t pat)
-        : major(maj), minor(min), patch(pat) {}
-
-    /**
-     * Return the version as a string formatted as
-     * [major].[minor].[patch]
-     * or
-     * [major].[minor].[patch]-[prerelease]
-     * depending on whether there is a prerelease value.
-     *
-     * @return the version formatted as a string.
-     */
-    OUSTER_API_FUNCTION
-    std::string simple_version_string() const {
-        std::stringstream sstream;
-        sstream << major << "." << minor << "." << patch;
-        if (!prerelease.empty()) {
-            sstream << "-" << prerelease;
-        }
-        return sstream.str();
-    }
+struct version {
+    uint16_t major;  ///< Major version number
+    uint16_t minor;  ///< Minor version number
+    uint16_t patch;  ///< Patch(or revision) version number
 };
 
-/**
- * @deprecated Use Version instead.
- */
-OUSTER_DEPRECATED_TYPE(version, Version,                       // NOLINT
-                       OUSTER_DEPRECATED_LAST_SUPPORTED_0_16)  // NOLINT
-
-/**
- * Represents an invalid or uninitialized version.
- * Used when version parsing fails.
- */
-const Version INVALID_VERSION = Version(0, 0, 0);
-
-/**
- * @deprecated Use INVALID_VERSION
- *
- * Using an extern here due to duplicate definition errors popping up.
- */
-OUSTER_DIAGNOSTIC_PUSH
-OUSTER_DIAGNOSTIC_IGNORE_UNUSED
-OUSTER_DEPRECATED_MSG(INVALID_VERSION, OUSTER_DEPRECATED_LAST_SUPPORTED_0_16)
-extern const Version& invalid_version;
-OUSTER_DIAGNOSTIC_POP
+const version invalid_version = {0, 0, 0};
 
 /** \defgroup ouster_client_version_operators Ouster Client version.h Operators
  * @{
@@ -100,11 +33,8 @@ OUSTER_DIAGNOSTIC_POP
  *
  * @return If the versions are the same.
  */
-OUSTER_API_FUNCTION
-inline bool operator==(const Version& u, const Version& v) {
-    return u.major == v.major && u.minor == v.minor && u.patch == v.patch &&
-           u.stage == v.stage && u.machine == v.machine && u.build == v.build &&
-           u.prerelease == v.prerelease;
+inline bool operator==(const version& u, const version& v) {
+    return u.major == v.major && u.minor == v.minor && u.patch == v.patch;
 }
 
 /**
@@ -115,8 +45,7 @@ inline bool operator==(const Version& u, const Version& v) {
  *
  * @return If the first version is less than the second version.
  */
-OUSTER_API_FUNCTION
-inline bool operator<(const Version& u, const Version& v) {
+inline bool operator<(const version& u, const version& v) {
     return (u.major < v.major) || (u.major == v.major && u.minor < v.minor) ||
            (u.major == v.major && u.minor == v.minor && u.patch < v.patch);
 }
@@ -129,8 +58,7 @@ inline bool operator<(const Version& u, const Version& v) {
  *
  * @return If the first version is less than or equal to the second version.
  */
-OUSTER_API_FUNCTION
-inline bool operator<=(const Version& u, const Version& v) {
+inline bool operator<=(const version& u, const version& v) {
     return u < v || u == v;
 }
 
@@ -142,8 +70,7 @@ inline bool operator<=(const Version& u, const Version& v) {
  *
  * @return If the versions are not the same.
  */
-OUSTER_API_FUNCTION
-inline bool operator!=(const Version& u, const Version& v) { return !(u == v); }
+inline bool operator!=(const version& u, const version& v) { return !(u == v); }
 
 /**
  * Greater than or equal to operation for version structs.
@@ -153,8 +80,7 @@ inline bool operator!=(const Version& u, const Version& v) { return !(u == v); }
  *
  * @return If the first version is greater than or equal to the second version.
  */
-OUSTER_API_FUNCTION
-inline bool operator>=(const Version& u, const Version& v) { return !(u < v); }
+inline bool operator>=(const version& u, const version& v) { return !(u < v); }
 
 /**
  * Greater than operation for version structs.
@@ -164,22 +90,36 @@ inline bool operator>=(const Version& u, const Version& v) { return !(u < v); }
  *
  * @return If the first version is greater than the second version.
  */
-OUSTER_API_FUNCTION
-inline bool operator>(const Version& u, const Version& v) { return !(u <= v); }
+inline bool operator>(const version& u, const version& v) { return !(u <= v); }
 /** @}*/
 
 /**
- * Get version from string. Parses strings of the format:
- * STAGE-MACHINE-vMAJOR.MINOR.PATCH-PRERELEASE+BUILD
- * Requires at least major.minor.patch to return a valid version.
+ * Get string representation of a version.
+ *
+ * @param[in] v version.
+ *
+ * @return string representation of the version.
+ */
+std::string to_string(const version& v);
+
+/**
+ * Get version from string.
+ *
+ * @param[in] s string.
+ *
+ * @return version corresponding to the string, or invalid_version on error.
+ */
+[[deprecated("Use version_from_string instead")]] version version_of_string(
+    const std::string& s);
+
+/**
+ * Get version from string.
  *
  * @param[in] ver string.
  *
  * @return version corresponding to the string, or invalid_version on error.
  */
-OUSTER_API_FUNCTION
-Version version_from_string(const std::string& ver);
+version version_from_string(const std::string& ver);
 
-}  // namespace core
-}  // namespace sdk
+}  // namespace util
 }  // namespace ouster

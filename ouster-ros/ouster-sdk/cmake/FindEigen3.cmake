@@ -1,14 +1,10 @@
 # Define forwards-compatible imported target for old platforms (Ubuntu 16.04)
 
-if(NOT OUSTER_SKIP_FIND_PACKAGE_STANDARD)
-  include(FindPackageHandleStandardArgs)
-endif()
+include(FindPackageHandleStandardArgs)
 
-find_package(Eigen3 CONFIG QUIET NO_CMAKE_FIND_ROOT_PATH)
+find_package(Eigen3 CONFIG QUIET)
 
-if(NOT OUSTER_SKIP_FIND_PACKAGE_STANDARD)
-  find_package_handle_standard_args(Eigen3 CONFIG_MODE)
-endif()
+find_package_handle_standard_args(Eigen3 CONFIG_MODE)
 
 if(NOT TARGET Eigen3::Eigen)
   add_library(Eigen3::Eigen INTERFACE IMPORTED)

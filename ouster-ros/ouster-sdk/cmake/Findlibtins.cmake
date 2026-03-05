@@ -8,9 +8,8 @@
 
 # Try to find a cmake config compatible with vcpkg and fall back to defining
 # targets using pkgconfig.
-if(NOT OUSTER_SKIP_FIND_PACKAGE_STANDARD)
-  include(FindPackageHandleStandardArgs)
-endif()
+include(FindPackageHandleStandardArgs)
+
 # Prefer config, if found
 find_package(libtins CONFIG QUIET)
 if(libtins_FOUND AND TARGET tins)
@@ -25,9 +24,7 @@ if(libtins_FOUND AND TARGET tins)
   set_target_properties(tins PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES ${LIBTINS_INCLUDE_DIRS})
 
-  if(NOT OUSTER_SKIP_FIND_PACKAGE_STANDARD)
-    find_package_handle_standard_args(libtins CONFIG_MODE)
-  endif()
+  find_package_handle_standard_args(libtins CONFIG_MODE)
 else()
   # Fall back to find_library with hints from pkgconfig
   find_package(PkgConfig QUIET)
@@ -46,12 +43,9 @@ else()
     NAMES tins/tins.h
     PATHS ${PC_TINS_INCLUDE_DIRS})
 
-  if(NOT OUSTER_SKIP_FIND_PACKAGE_STANDARD)
-    find_package_handle_standard_args(libtins
-      REQUIRED_VARS LIBTINS_LIBRARIES LIBTINS_INCLUDE_DIRS
-      VERSION_VAR LIBTINS_VERSION)
-  endif()
-
+  find_package_handle_standard_args(libtins
+    REQUIRED_VARS LIBTINS_LIBRARIES LIBTINS_INCLUDE_DIRS
+    VERSION_VAR LIBTINS_VERSION)
 endif()
 
 # LIBTINS_LIBRARIES is set, add target with a name compatible with the conan

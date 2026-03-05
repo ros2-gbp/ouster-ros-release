@@ -11,32 +11,28 @@
 #include <Eigen/Core>
 
 #include "ouster/types.h"
-#include "ouster/visibility.h"
 
 namespace ouster {
-namespace sdk {
-namespace core {
+namespace viz {
 
 /** Adjusts brightness to between 0 and 1. */
-class OUSTER_API_CLASS AutoExposure {
-    const double lo_percentile_,
-        hi_percentile_;  // percentiles used for scaling
-    const int ae_update_every_;
+class AutoExposure {
+    const double lo_percentile, hi_percentile;  // percentiles used for scaling
+    const int ae_update_every;
 
-    double lo_state_ = -1.0;
-    double hi_state_ = -1.0;
-    double lo_ = -1.0;
-    double hi_ = -1.0;
+    double lo_state = -1.0;
+    double hi_state = -1.0;
+    double lo = -1.0;
+    double hi = -1.0;
 
-    bool initialized_ = false;
-    int counter_ = 0;
+    bool initialized = false;
+    int counter = 0;
 
     template <typename T>
     void update(Eigen::Ref<img_t<T>> image, bool update_state);
 
    public:
     /** Default constructor using default percentile and update values. */
-    OUSTER_API_FUNCTION
     AutoExposure();
 
     /**
@@ -44,7 +40,6 @@ class OUSTER_API_CLASS AutoExposure {
      *
      * @param[in] update_every update every this number of frames.
      */
-    OUSTER_API_FUNCTION
     AutoExposure(int update_every);
 
     /**
@@ -54,7 +49,6 @@ class OUSTER_API_CLASS AutoExposure {
      * @param[in] hi_percentile high percentile to use for adjustment.
      * @param[in] update_every update every this number of frames.
      */
-    OUSTER_API_FUNCTION
     AutoExposure(double lo_percentile, double hi_percentile, int update_every);
 
     /**
@@ -66,7 +60,6 @@ class OUSTER_API_CLASS AutoExposure {
      * @param[in] image Reference to the image, modified in place.
      * @param[in] update_state Update lo/hi percentiles if true.
      */
-    OUSTER_API_FUNCTION
     void operator()(Eigen::Ref<img_t<float>> image, bool update_state = true);
 
     /**
@@ -78,7 +71,6 @@ class OUSTER_API_CLASS AutoExposure {
      * @param[in] image Reference to the image, modified in place.
      * @param[in] update_state Update lo/hi percentiles if true.
      */
-    OUSTER_API_FUNCTION
     void operator()(Eigen::Ref<img_t<double>> image, bool update_state = true);
 };
 
@@ -87,10 +79,10 @@ class OUSTER_API_CLASS AutoExposure {
  * thereby correcting subtle horizontal line artifacts in images, especially the
  * ambient image.
  */
-class OUSTER_API_CLASS BeamUniformityCorrector {
+class BeamUniformityCorrector {
    private:
-    int counter_ = 0;
-    Eigen::ArrayXd dark_count_;
+    int counter = 0;
+    Eigen::ArrayXd dark_count;
 
     template <typename T>
     void update(Eigen::Ref<img_t<T>> image, bool update_state);
@@ -103,7 +95,6 @@ class OUSTER_API_CLASS BeamUniformityCorrector {
      * @param[in] image Reference to the image, modified in-place.
      * @param[in] update_state Update dark counts if true.
      */
-    OUSTER_API_FUNCTION
     void operator()(Eigen::Ref<img_t<float>> image, bool update_state = true);
 
     /**
@@ -113,9 +104,7 @@ class OUSTER_API_CLASS BeamUniformityCorrector {
      * @param[in] image Reference to the image, modified in-place.
      * @param[in] update_state Update dark counts if true.
      */
-    OUSTER_API_FUNCTION
     void operator()(Eigen::Ref<img_t<double>> image, bool update_state = true);
 };
-}  // namespace core
-}  // namespace sdk
+}  // namespace viz
 }  // namespace ouster

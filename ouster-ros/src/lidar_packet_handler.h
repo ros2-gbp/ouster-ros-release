@@ -17,7 +17,6 @@
 #include <pcl_conversions/pcl_conversions.h>
 
 #include "lock_free_ring_buffer.h"
-#include <optional>
 #include <thread>
 #include <chrono>
 
@@ -52,20 +51,22 @@ uint64_t linear_interpolate(int x0, uint64_t y0, int x1, uint64_t y1, int x) {
 
 namespace ouster_ros {
 
+namespace sensor = ouster::sensor;
+
 using LidarScanProcessor =
-    std::function<void(const ouster::sdk::core::LidarScan&, uint64_t, const rclcpp::Time&)>;
+    std::function<void(const ouster::LidarScan&, uint64_t, const rclcpp::Time&)>;
 
 class LidarPacketHandler {
     using LidarPacketAccumlator =
-        std::function<bool(const ouster::sdk::core::LidarPacket&)>;
+        std::function<bool(const sensor::LidarPacket&)>;
 
    public:
-    using HandlerOutput = ouster::sdk::core::LidarScan;
+    using HandlerOutput = ouster::LidarScan;
 
-    using HandlerType = std::function<void(const ouster::sdk::core::LidarPacket&)>;
+    using HandlerType = std::function<void(const sensor::LidarPacket&)>;
 
    public:
-    LidarPacketHandler(const ouster::sdk::core::SensorInfo& info,
+    LidarPacketHandler(const sensor::sensor_info& info,
                        const std::vector<LidarScanProcessor>& handlers,
                        const std::string& timestamp_mode,
                        int64_t ptp_utc_tai_offset,
@@ -75,13 +76,13 @@ class LidarPacketHandler {
           ptp_utc_tai_offset_(ptp_utc_tai_offset),
           min_scan_valid_columns_ratio_(min_scan_valid_columns_ratio) {
         // initialize lidar_scan processor and buffer
-        scan_batcher = std::make_unique<ouster::sdk::core::ScanBatcher>(info);
+        scan_batcher = std::make_unique<ouster::ScanBatcher>(info);
 
         lidar_scans.resize(LIDAR_SCAN_COUNT);
         mutexes.resize(LIDAR_SCAN_COUNT);
 
         for (size_t i = 0; i < lidar_scans.size(); ++i) {
-            lidar_scans[i] = std::make_unique<ouster::sdk::core::LidarScan>(
+            lidar_scans[i] = std::make_unique<ouster::LidarScan>(
                 info.format.columns_per_frame, info.format.pixels_per_column,
                 info.format.udp_profile_lidar);
             mutexes[i] = std::make_unique<std::mutex>();
@@ -96,15 +97,15 @@ class LidarPacketHandler {
         });
 
         // initalize time handlers
-        scan_col_ts_spacing_ns = compute_scan_col_ts_spacing_ns(info.config.lidar_mode.value());
+        scan_col_ts_spacing_ns = compute_scan_col_ts_spacing_ns(info.mode);
         compute_scan_ts = [this](const auto& ts_v) {
             return compute_scan_ts_0(ts_v);
         };
 
-        const ouster::sdk::core::PacketFormat& pf = ouster::sdk::core::get_format(info);
+        const sensor::packet_format& pf = sensor::get_format(info);
 
-        std::function<bool(LidarPacketHandler&, const ouster::sdk::core::PacketFormat&,
-                           const ouster::sdk::core::LidarPacket&, ouster::sdk::core::LidarScan&)>
+        std::function<bool(LidarPacketHandler&, const sensor::packet_format&,
+                           const sensor::LidarPacket&, ouster::LidarScan&)>
             lidar_handler;
 
         if (timestamp_mode == "TIME_FROM_ROS_TIME") {
@@ -119,7 +120,7 @@ class LidarPacketHandler {
         }
 
         lidar_packet_accumlator = LidarPacketAccumlator{
-            [this, pf, lidar_handler](const ouster::sdk::core::LidarPacket& lidar_packet) {
+            [this, pf, lidar_handler](const sensor::LidarPacket& lidar_packet) {
                 if (ring_buffer.full()) {
                     RCLCPP_WARN(rclcpp::get_logger(getName()),
                                 "lidar_scans full, DROPPING PACKET");
@@ -171,14 +172,14 @@ class LidarPacketHandler {
 
    public:
     static HandlerType create(
-        const ouster::sdk::core::SensorInfo& info,
+        const sensor::sensor_info& info,
         const std::vector<LidarScanProcessor>& handlers,
         const std::string& timestamp_mode, int64_t ptp_utc_tai_offset,
         float min_scan_valid_columns_ratio) {
         auto handler = std::make_shared<LidarPacketHandler>(
             info, handlers, timestamp_mode, ptp_utc_tai_offset,
             min_scan_valid_columns_ratio);
-        return [handler](const ouster::sdk::core::LidarPacket& lidar_packet) {
+        return [handler](const sensor::LidarPacket& lidar_packet) {
             if (handler->lidar_packet_accumlator(lidar_packet)) {
                 handler->ring_buffer_has_elements.notify_one();
             }
@@ -240,7 +241,7 @@ class LidarPacketHandler {
 
     // compute_scan_ts_0 for first scan
     uint64_t compute_scan_ts_0(
-        const ouster::sdk::core::LidarScan::Header<uint64_t>& ts_v) {
+        const ouster::LidarScan::Header<uint64_t>& ts_v) {
         auto idx = std::find_if(ts_v.data(), ts_v.data() + ts_v.size(),
                                 [](uint64_t h) { return h != 0; });
         assert(idx != ts_v.data() + ts_v.size());  // should never happen
@@ -266,7 +267,7 @@ class LidarPacketHandler {
 
     // compute_scan_ts_n applied to all subsequent scans except first one
     uint64_t compute_scan_ts_n(
-        const ouster::sdk::core::LidarScan::Header<uint64_t>& ts_v) {
+        const ouster::LidarScan::Header<uint64_t>& ts_v) {
         auto idx = std::find_if(ts_v.data(), ts_v.data() + ts_v.size(),
                                 [](uint64_t h) { return h != 0; });
         assert(idx != ts_v.data() + ts_v.size());  // should never happen
@@ -286,12 +287,12 @@ class LidarPacketHandler {
         return scan_ns;
     }
 
-    uint16_t packet_col_index(const ouster::sdk::core::PacketFormat& pf,
+    uint16_t packet_col_index(const sensor::packet_format& pf,
                               const uint8_t* lidar_buf) {
         return pf.col_measurement_id(pf.nth_col(0, lidar_buf));
     }
 
-    rclcpp::Time extrapolate_frame_ts(const ouster::sdk::core::PacketFormat& pf,
+    rclcpp::Time extrapolate_frame_ts(const sensor::packet_format& pf,
                                       const uint8_t* lidar_buf,
                                       const rclcpp::Time current_time) {
         auto curr_scan_first_arrived_idx = packet_col_index(pf, lidar_buf);
@@ -301,9 +302,9 @@ class LidarPacketHandler {
         return current_time - delta_time;
     }
 
-    bool lidar_handler_sensor_time(const ouster::sdk::core::PacketFormat&,
-                                   const ouster::sdk::core::LidarPacket& lidar_packet,
-                                   ouster::sdk::core::LidarScan& lidar_scan) {
+    bool lidar_handler_sensor_time(const sensor::packet_format&,
+                                   const sensor::LidarPacket& lidar_packet,
+                                   ouster::LidarScan& lidar_scan) {
         if (!(*scan_batcher)(lidar_packet, lidar_scan)) return false;
         lidar_scan_estimated_ts = compute_scan_ts(lidar_scan.timestamp());
         lidar_scan_estimated_msg_ts = rclcpp::Time(lidar_scan_estimated_ts);
@@ -311,9 +312,9 @@ class LidarPacketHandler {
         return true;
     }
 
-    bool lidar_handler_sensor_time_ptp(const ouster::sdk::core::PacketFormat&,
-                                       const ouster::sdk::core::LidarPacket& lidar_packet,
-                                       ouster::sdk::core::LidarScan& lidar_scan) {
+    bool lidar_handler_sensor_time_ptp(const sensor::packet_format&,
+                                       const sensor::LidarPacket& lidar_packet,
+                                       ouster::LidarScan& lidar_scan) {
         if (!(*scan_batcher)(lidar_packet, lidar_scan)) return false;
         auto ts_v = lidar_scan.timestamp();
         for (int i = 0; i < ts_v.rows(); ++i)
@@ -325,9 +326,9 @@ class LidarPacketHandler {
         return true;
     }
 
-    bool lidar_handler_ros_time(const ouster::sdk::core::PacketFormat& pf,
-                                const ouster::sdk::core::LidarPacket& lidar_packet,
-                                ouster::sdk::core::LidarScan& lidar_scan) {
+    bool lidar_handler_ros_time(const sensor::packet_format& pf,
+                                const sensor::LidarPacket& lidar_packet,
+                                ouster::LidarScan& lidar_scan) {
         auto packet_receive_time = rclcpp::Time(lidar_packet.host_timestamp);
 
         if (!lidar_handler_ros_time_frame_ts) {
@@ -345,20 +346,20 @@ class LidarPacketHandler {
         return true;
     }
 
-    static double compute_scan_col_ts_spacing_ns(ouster::sdk::core::LidarMode ld_mode) {
-        const auto scan_width = ouster::sdk::core::n_cols_of_lidar_mode(ld_mode);
-        const auto scan_frequency = ouster::sdk::core::frequency_of_lidar_mode(ld_mode);
+    static double compute_scan_col_ts_spacing_ns(sensor::lidar_mode ld_mode) {
+        const auto scan_width = sensor::n_cols_of_lidar_mode(ld_mode);
+        const auto scan_frequency = sensor::frequency_of_lidar_mode(ld_mode);
         const double one_sec_in_ns = 1e+9;
         return one_sec_in_ns / (scan_width * scan_frequency);
     }
 
    private:
-    std::unique_ptr<ouster::sdk::core::ScanBatcher> scan_batcher;
+    std::unique_ptr<ouster::ScanBatcher> scan_batcher;
     const int LIDAR_SCAN_COUNT = 10;
     const float THROTTLE_PERCENT = 0.7f;
     LockFreeRingBuffer ring_buffer;
     std::mutex ring_buffer_mutex;
-    std::vector<std::unique_ptr<ouster::sdk::core::LidarScan>> lidar_scans;
+    std::vector<std::unique_ptr<ouster::LidarScan>> lidar_scans;
     std::vector<std::unique_ptr<std::mutex>> mutexes;
 
     uint64_t lidar_scan_estimated_ts;
@@ -372,7 +373,7 @@ class LidarPacketHandler {
     double scan_col_ts_spacing_ns;  // interval or spacing between columns of a
                                     // scan
 
-    std::function<uint64_t(const ouster::sdk::core::LidarScan::Header<uint64_t>&)>
+    std::function<uint64_t(const ouster::LidarScan::Header<uint64_t>&)>
         compute_scan_ts;
 
     std::vector<LidarScanProcessor> lidar_scan_handlers;

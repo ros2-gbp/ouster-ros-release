@@ -22,12 +22,11 @@ if(NOT TARGET libpcap::libpcap)
     IMPORTED_LOCATION "${PCAP_LIBRARY}")
 endif()
 
-if(NOT OUSTER_SKIP_FIND_PACKAGE_STANDARD)
-  include(FindPackageHandleStandardArgs)
-  find_package_handle_standard_args(Pcap
-    REQUIRED_VARS PCAP_LIBRARY PCAP_INCLUDE_DIR
-    VERSION_VAR PCAP_VERSION_STRING)
-endif()
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(Pcap
+  REQUIRED_VARS PCAP_LIBRARY PCAP_INCLUDE_DIR
+  VERSION_VAR PCAP_VERSION_STRING)
+
 mark_as_advanced(
   PCAP_INCLUDE_DIR
   PCAP_LIBRARY)

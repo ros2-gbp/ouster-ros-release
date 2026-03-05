@@ -1,17 +1,13 @@
-# Define forwards-compatible imported target for old platforms
+# Define forwards-compatible imported target for old platforms (Ubuntu 18.04)
 # Note: curl from VCPKG appears to completely ignore curl find modules despite
 # CMAKE_MODULE_PATH settings
 
-if(NOT OUSTER_SKIP_FIND_PACKAGE_STANDARD)
-  include(FindPackageHandleStandardArgs)
-endif()
+include(FindPackageHandleStandardArgs)
 
 # Prefer package config if it exists
-find_package(CURL CONFIG QUIET NO_CMAKE_FIND_ROOT_PATH)
+find_package(CURL CONFIG QUIET)
 if(CURL_FOUND)
-  if(NOT OUSTER_SKIP_FIND_PACKAGE_STANDARD)
-    find_package_handle_standard_args(CURL CONFIG_MODE)
-  endif()
+  find_package_handle_standard_args(CURL CONFIG_MODE)
   return()
 endif()
 
@@ -36,11 +32,9 @@ find_library(CURL_LIBRARIES NAMES
 mark_as_advanced(CURL_LIBRARIES)
 
 # Check that we have everything that we need
-if(NOT OUSTER_SKIP_FIND_PACKAGE_STANDARD)
-  find_package_handle_standard_args(CURL
-    REQUIRED_VARS CURL_INCLUDE_DIRS CURL_LIBRARIES
-    VERSION_VAR CURL_VERSION_STRING)
-endif()
+find_package_handle_standard_args(CURL
+  REQUIRED_VARS CURL_INCLUDE_DIRS CURL_LIBRARIES
+  VERSION_VAR CURL_VERSION_STRING)
 
 if(NOT TARGET CURL::libcurl)
   add_library(CURL::libcurl UNKNOWN IMPORTED)

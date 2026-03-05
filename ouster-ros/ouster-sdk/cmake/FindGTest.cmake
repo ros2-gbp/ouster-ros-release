@@ -1,4 +1,5 @@
 # Attempt to deal with gtest cmake differences across platforms
+
 function(find_gtest)
   # use system find module in this scope
   set(CMAKE_MODULE_PATH "")

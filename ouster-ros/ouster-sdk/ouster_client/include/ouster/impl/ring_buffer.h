@@ -7,19 +7,12 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cstddef>
-#include <numeric>
-#include <stdexcept>
-#include <type_traits>
+#include <cstdint>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
-#include "ouster/visibility.h"
-
 namespace ouster {
-namespace sdk {
-namespace core {
+namespace sensor {
 namespace impl {
 
 /**
@@ -54,7 +47,6 @@ class RingBuffer {
     std::atomic<size_t> r_idx_, w_idx_;
     std::vector<T> bufs_;
 
-    OUSTER_API_IGNORE
     size_t _capacity() const { return bufs_.size(); }
 
    public:
@@ -130,9 +122,7 @@ class RingBuffer {
      * Throws if ring buffer is empty.
      */
     void pop() {
-        if (empty()) {
-            throw std::underflow_error("popped an empty ring buffer");
-        }
+        if (empty()) throw std::underflow_error("popped an empty ring buffer");
         size_t read_idx = r_idx_.load();
         while (!r_idx_.compare_exchange_strong(read_idx,
                                                (read_idx + 1) % _capacity())) {
@@ -145,9 +135,7 @@ class RingBuffer {
      * Throws if ring buffer is full.
      */
     void push() {
-        if (full()) {
-            throw std::overflow_error("pushed a full ring buffer");
-        }
+        if (full()) throw std::overflow_error("pushed a full ring buffer");
         size_t write_idx = r_idx_.load();
         // atomic increment modulo
         while (!w_idx_.compare_exchange_strong(write_idx,
@@ -167,7 +155,7 @@ class RingBufferMap {
    public:
     using MapInputs = std::unordered_map<K, std::pair<size_t, V>>;
 
-    RingBufferMap() = default;
+    RingBufferMap() {}
 
     RingBufferMap(const MapInputs& inputs) : rb_map_{} {
         for (const auto& pair : inputs) {
@@ -243,9 +231,7 @@ class RingBufferMap {
      * Flush all internal buffers.
      */
     void flush() {
-        for (auto& kv : rb_map_) {
-            kv.second.flush();
-        }
+        for (auto& kv : rb_map_) kv.second.flush();
     }
 
     /**
@@ -292,6 +278,5 @@ class RingBufferMap {
 };
 
 }  // namespace impl
-}  // namespace core
-}  // namespace sdk
+}  // namespace sensor
 }  // namespace ouster
