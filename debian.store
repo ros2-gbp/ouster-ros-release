@@ -1,1 +1,1 @@
-{"base": "8db2d420e337", "parent": "debian/rolling/ouster_sensor_msgs", "previous": "9fdcccfa4291", "trim": "", "trimbase": ""}
+{"base": "40b894f", "parent": "debian/lyrical/ouster_sensor_msgs", "previous": "8a205fb", "trim": "", "trimbase": ""}
