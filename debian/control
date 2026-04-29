@@ -1,0 +1,12 @@
+Source: ros-lyrical-ouster-ros
+Section: misc
+Priority: optional
+Maintainer: ouster developers <oss@ouster.io>
+Build-Depends: debhelper (>= 9.0.0), curl, libcurl4-openssl-dev, libeigen3-dev, libgtest-dev <!nocheck>, libjsoncpp-dev, libpcl-dev, libspdlog-dev, libtins-dev, libzip-dev, ros-lyrical-ament-cmake, ros-lyrical-ament-cmake-gtest <!nocheck>, ros-lyrical-class-loader, ros-lyrical-cv-bridge, ros-lyrical-geometry-msgs, ros-lyrical-ouster-sensor-msgs, ros-lyrical-pcl-conversions, ros-lyrical-rclcpp, ros-lyrical-rclcpp-components, ros-lyrical-rclcpp-lifecycle, ros-lyrical-rosidl-default-generators, ros-lyrical-sensor-msgs, ros-lyrical-std-msgs, ros-lyrical-std-srvs, ros-lyrical-tf2-eigen, ros-lyrical-tf2-ros, ros-lyrical-ros-workspace, ros-lyrical-rosidl-typesupport-fastrtps-c, ros-lyrical-rosidl-typesupport-fastrtps-cpp
+Homepage: https://index.ros.org/p/ouster_ros/#lyrical
+Standards-Version: 3.9.2
+
+Package: ros-lyrical-ouster-ros
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, curl, libcurl4-openssl-dev, libjsoncpp25, libspdlog-dev, ros-lyrical-class-loader, ros-lyrical-cv-bridge, ros-lyrical-geometry-msgs, ros-lyrical-launch, ros-lyrical-launch-ros, ros-lyrical-ouster-sensor-msgs, ros-lyrical-pcl-conversions, ros-lyrical-rclcpp, ros-lyrical-rclcpp-components, ros-lyrical-rclcpp-lifecycle, ros-lyrical-rosidl-default-runtime, ros-lyrical-sensor-msgs, ros-lyrical-std-msgs, ros-lyrical-std-srvs, ros-lyrical-tf2-ros, ros-lyrical-ros-workspace
+Description: Ouster ROS2 driver
