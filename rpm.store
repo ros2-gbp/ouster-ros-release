@@ -1,1 +1,1 @@
-{"base": "ec2c0afafc37", "parent": "release/rolling/ouster_ros/0.14.2-2", "previous": "791a8715fee7", "trim": "", "trimbase": ""}
+{"base": "44fccd3", "parent": "release/lyrical/ouster_ros/0.14.2-3", "previous": "0f36375", "trim": "", "trimbase": ""}
