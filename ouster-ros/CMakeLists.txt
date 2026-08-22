@@ -30,7 +30,19 @@ if(NOT OpenCV_LIBS)
 endif()
 
 # ==== Options ====
-add_compile_options(-Wall -Wextra)
+if(MSVC)
+  add_compile_options(/W2)
+else()
+  add_compile_options(-Wall -Wextra)
+endif()
+
+if(WIN32)
+  add_compile_definitions(NOMINMAX _USE_MATH_DEFINES WIN32_LEAN_AND_MEAN)
+  if(NOT DEFINED CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON CACHE BOOL "Export all symbols on Windows by default")
+  endif()
+endif()
+
 if(NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,8 +52,9 @@ option(CMAKE_POSITION_INDEPENDENT_CODE "Build position independent code." ON)
 set(_ouster_ros_INCLUDE_DIRS
   include
   ouster-sdk/ouster_sensor/include
-  ouster-sdk/ouster_client/include/optional-lite
+  ouster-sdk/ouster_client/include
   ouster-sdk/ouster_pcap/include
+  ouster-sdk/ouster_client/include/optional-lite
 )
 
 # ==== Libraries ====
@@ -62,7 +75,7 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS})
 
 # use only MPL-licensed parts of eigen
-add_definitions(-DEIGEN_MPL2_ONLY)
+add_compile_definitions(EIGEN_MPL2_ONLY)
 
 set(OUSTER_TARGET_LINKS ouster_client)
 if (BUILD_PCAP)
@@ -70,6 +83,7 @@ if (BUILD_PCAP)
 endif()
 
 add_library(ouster_ros_library SHARED
+  src/impl/file_util.cpp
   src/os_ros.cpp
 )
 
